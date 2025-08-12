@@ -1,0 +1,52 @@
+package com.example.thuc_tap.controller;
+
+import com.example.thuc_tap.dto.UserDto;
+import com.example.thuc_tap.service.UserService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/users")
+@CrossOrigin(origins = "*")
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
+    @GetMapping
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        List<UserDto> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
+        Optional<UserDto> user = userService.getUserById(id);
+        return user.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) {
+        UserDto createdUser = userService.createUser(userDto);
+        return ResponseEntity.ok(createdUser);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @Valid @RequestBody UserDto userDto) {
+        Optional<UserDto> updatedUser = userService.updateUser(id, userDto);
+        return updatedUser.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        boolean deleted = userService.deleteUser(id);
+        return deleted ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    }
+}
