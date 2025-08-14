@@ -4,6 +4,7 @@ import com.example.thuc_tap.dto.UserDto;
 import com.example.thuc_tap.entity.Department;
 import com.example.thuc_tap.entity.Role;
 import com.example.thuc_tap.entity.User;
+import com.example.thuc_tap.mapper.UserMapper;
 import com.example.thuc_tap.repository.DepartmentRepository;
 import com.example.thuc_tap.repository.RoleRepository;
 import com.example.thuc_tap.repository.UserRepository;
@@ -25,17 +26,20 @@ public class UserService {
     @Autowired
     private RoleRepository roleRepository;
 
+    @Autowired
+    private UserMapper userMapper;
+
     public List<UserDto> getAllUsers() {
         List<User> users = userRepository.findAll();
-        return users.stream().map(this::convertToDto).toList();
+        return users.stream().map(userMapper::toDto).toList();
     }
 
     public Optional<UserDto> getUserById(Long id) {
-        return userRepository.findById(id).map(this::convertToDto);
+        return userRepository.findById(id).map(userMapper::toDto);
     }
 
     public Optional<UserDto> getUserByUsername(String username) {
-        return userRepository.findByUsername(username).map(this::convertToDto);
+        return userRepository.findByUsername(username).map(userMapper::toDto);
     }
 
     public UserDto createUser(UserDto userDto) {
@@ -70,7 +74,7 @@ public class UserService {
         }
 
         User savedUser = userRepository.save(user);
-        return convertToDto(savedUser);
+        return userMapper.toDto(savedUser);
     }
 
     public Optional<UserDto> updateUser(Long id, UserDto userDto) {
@@ -99,7 +103,7 @@ public class UserService {
             }
 
             User savedUser = userRepository.save(user);
-            return convertToDto(savedUser);
+            return userMapper.toDto(savedUser);
         });
     }
 
@@ -123,29 +127,6 @@ public class UserService {
 
     public List<UserDto> findUsersByName(String name) {
         List<User> users = userRepository.findByFullNameContainingIgnoreCase(name);
-        return users.stream().map(this::convertToDto).toList();
-    }
-
-    private UserDto convertToDto(User user) {
-        UserDto dto = new UserDto();
-        dto.setId(user.getId());
-        dto.setEmployeeCode(user.getEmployeeCode());
-        dto.setUsername(user.getUsername());
-        dto.setFullName(user.getFullName());
-        dto.setEmail(user.getEmail());
-        dto.setPhone(user.getPhone());
-        dto.setIsActive(user.getIsActive());
-
-        if (user.getDepartment() != null) {
-            dto.setDepartmentId(user.getDepartment().getId());
-            dto.setDepartmentName(user.getDepartment().getName());
-        }
-
-        if (user.getRole() != null) {
-            dto.setRoleId(user.getRole().getId());
-            dto.setRoleName(user.getRole().getName());
-        }
-
-        return dto;
+        return users.stream().map(userMapper::toDto).toList();
     }
 }
