@@ -1,12 +1,19 @@
 package com.example.thuc_tap.entity;
 
+import com.example.thuc_tap.common.FieldOption;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "form_fields")
@@ -38,12 +45,14 @@ public class FormField {
     
     @Column(name = "field_order", nullable = false)
     private Integer fieldOrder;
-    
-    @Column(name = "field_options", columnDefinition = "JSON")
-    private String fieldOptions; // Cho select, radio, checkbox
-    
-    @Column(name = "validation_rules", columnDefinition = "JSON")
-    private String validationRules; // Quy tắc validation
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "field_options", columnDefinition = "jsonb")
+    private List<FieldOption> fieldOptions = new ArrayList<>(); // Cho select, radio, checkbox
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "validation_rules", columnDefinition = "jsonb")
+    private Map<String, Object> validationRules = new HashMap<>(); // Quy tắc validation
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
