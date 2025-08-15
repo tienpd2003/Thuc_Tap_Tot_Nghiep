@@ -1,7 +1,11 @@
 package com.example.thuc_tap.service;
 
 import com.example.thuc_tap.dto.UserDto;
+import com.example.thuc_tap.entity.Department;
+import com.example.thuc_tap.entity.Role;
 import com.example.thuc_tap.entity.User;
+import com.example.thuc_tap.repository.DepartmentRepository;
+import com.example.thuc_tap.repository.RoleRepository;
 import com.example.thuc_tap.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,6 +18,12 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
 
     public List<UserDto> getAllUsers() {
         List<User> users = userRepository.findAll();
@@ -32,13 +42,15 @@ public class UserService {
         User user = new User();
         user.setEmployeeCode(userDto.getEmployeeCode());
         user.setUsername(userDto.getUsername());
-        // Không mã hóa mật khẩu khi bỏ security (chỉ cho môi trường dev)
         user.setPassword(userDto.getPassword());
         user.setFullName(userDto.getFullName());
         user.setEmail(userDto.getEmail());
         user.setPhone(userDto.getPhone());
         user.setIsActive(userDto.getIsActive());
-
+        user.setRole(getRoleById(userDto.getRoleId()));
+        if (userDto.getDepartmentId() != null) {
+            user.setDepartment(getDepartmentById(userDto.getDepartmentId()));
+        }
         User savedUser = userRepository.save(user);
         return convertToDto(savedUser);
     }
@@ -88,5 +100,13 @@ public class UserService {
         }
 
         return dto;
+    }
+    private Role getRoleById(Long roleId) {
+        return roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Role not found with id: " + roleId));
+    }
+    private Department getDepartmentById(Long departmentId) {
+        return departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new RuntimeException("Department not found with id: " + departmentId));
     }
 }
