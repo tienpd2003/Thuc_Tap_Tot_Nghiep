@@ -89,10 +89,9 @@ public class FormTemplateService {
                 FieldType fieldType = fieldTypeRepository.findById(fieldDto.getFieldTypeId())
                         .orElseThrow(() -> new RuntimeException("FieldType not found: " + fieldDto.getFieldTypeId()));
                 formField.setFieldType(fieldType);
-
-                formField.setFieldType(fieldType);
                 formField.setIsRequired(fieldDto.getIsRequired());
                 formField.setFieldOrder(fieldDto.getFieldOrder());
+                formField.setReadOnly(fieldDto.getReadOnly());
 
                 formField.setFieldOptions(fieldDto.getFieldOptions());
 
@@ -109,10 +108,14 @@ public class FormTemplateService {
                 ApprovalWorkflow approvalWorkflow = new ApprovalWorkflow();
                 approvalWorkflow.setStepOrder(workflowDto.getStepOrder());
 
-                Department department = new Department();
-                department.setId(workflowDto.getDepartmentId());
+                if (workflowDto.getDepartmentId() != null) {
+                    Department department = new Department();
+                    department.setId(workflowDto.getDepartmentId());
+                    approvalWorkflow.setDepartment(department);
+                } else {
+                    approvalWorkflow.setDepartment(null);
+                }
 
-                approvalWorkflow.setDepartment(department);
                 approvalWorkflow.setStepName(workflowDto.getStepName());
                 approvalWorkflow.setFormTemplate(formTemplate);
 

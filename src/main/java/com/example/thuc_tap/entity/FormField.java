@@ -46,6 +46,9 @@ public class FormField {
     @Column(name = "field_order", nullable = false)
     private Integer fieldOrder;
 
+    @Column(name = "read_only", nullable = false)
+    private Boolean readOnly = false;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "field_options", columnDefinition = "jsonb")
     private List<FieldOption> fieldOptions = new ArrayList<>(); // Cho select, radio, checkbox

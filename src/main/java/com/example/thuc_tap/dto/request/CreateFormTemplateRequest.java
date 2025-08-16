@@ -10,7 +10,7 @@ import java.util.List;
 public class CreateFormTemplateRequest {
     private String name;
     private String description;
-    private Boolean isActive;
+    private Boolean isActive = true;
     private Long createdById;
     private List<FormFieldDto> formFields;
     private List<ApprovalWorkflowDto> approvalWorkflows;

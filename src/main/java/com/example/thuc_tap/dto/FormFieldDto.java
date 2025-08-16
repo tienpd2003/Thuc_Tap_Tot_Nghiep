@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,9 +19,10 @@ public class FormFieldDto {
     private String fieldLabel;
     private Long fieldTypeId;
     private String fieldTypeName;
-    private Boolean isRequired;
+    private Boolean isRequired = false;
     private Integer fieldOrder;
-    private List<FieldOption> fieldOptions;
-    private Map<String, Object> validationRules;
+    private Boolean readOnly = false;
+    private List<FieldOption> fieldOptions = new ArrayList<>();
+    private Map<String, Object> validationRules = new HashMap<>();
 
 }
