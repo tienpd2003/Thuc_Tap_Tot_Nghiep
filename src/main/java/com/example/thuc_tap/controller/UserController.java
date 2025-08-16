@@ -49,4 +49,16 @@ public class UserController {
         boolean deleted = userService.deleteUser(id);
         return deleted ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
+
+    @PutMapping("/{id}/deactivate")
+    public ResponseEntity<Void> deactivateUser(@PathVariable Long id) {
+        boolean deactivated = userService.deactivateUser(id);
+        return deactivated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserDto>> findUsersByName(@RequestParam String name) {
+        List<UserDto> users = userService.findUsersByName(name);
+        return ResponseEntity.ok(users);
+    }
 }
