@@ -1,12 +1,9 @@
 package com.example.thuc_tap.dto;
 
+import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
 @Data
 @NoArgsConstructor
@@ -41,7 +38,9 @@ public class UserDto {
     
     private Long departmentId;
     private String departmentName;
-    
+
+    @NotNull(message = "roleId is required")
+    @Positive(message = "roleId must be a positive number")
     private Long roleId;
     private String roleName;
     
