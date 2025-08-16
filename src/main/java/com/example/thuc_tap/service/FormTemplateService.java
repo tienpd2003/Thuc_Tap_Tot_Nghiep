@@ -1,16 +1,24 @@
 package com.example.thuc_tap.service;
 
-import com.example.thuc_tap.dto.FormTemplateDto;
 import com.example.thuc_tap.dto.request.CreateFormTemplateRequest;
+import com.example.thuc_tap.dto.request.FormTemplateFilterRequest;
+import com.example.thuc_tap.dto.response.FormTemplateFilterResponse;
+import com.example.thuc_tap.dto.response.FormTemplateResponse;
 import com.example.thuc_tap.entity.*;
 import com.example.thuc_tap.mapper.FormTemplateMapper;
 import com.example.thuc_tap.repository.FieldTypeRepository;
 import com.example.thuc_tap.repository.FormTemplateRepository;
 import com.example.thuc_tap.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,8 +31,43 @@ public class FormTemplateService {
     private final UserRepository userRepository;
     private final FieldTypeRepository fieldTypeRepository;
 
+    public Page<FormTemplateFilterResponse> getAllFormTemplates(FormTemplateFilterRequest filter) {
+        Pageable pageable = PageRequest.of(
+                filter.getPage(),
+                filter.getPageSize(),
+                Sort.by(Sort.Direction.fromString(filter.getSortDirection()), filter.getSortBy())
+        );
+
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+
+        Page<FormTemplateFilterResponse> responsePage = formTemplateRepository.findByCriteria(
+                filter.getKeyword(),
+                filter.getIsActive(),
+                filter.getCreatedById(),
+                filter.getApprovalDepartmentId(),
+                filter.getCreatedAtFrom() != null ? LocalDateTime.parse(filter.getCreatedAtFrom(), formatter) : null,
+                filter.getCreatedAtTo() != null ? LocalDateTime.parse(filter.getCreatedAtTo(), formatter) : null,
+                filter.getUpdatedAtFrom() != null ? LocalDateTime.parse(filter.getUpdatedAtFrom(), formatter) : null,
+                filter.getUpdatedAtTo() != null ? LocalDateTime.parse(filter.getUpdatedAtTo(), formatter) : null,
+                pageable
+        );
+
+        responsePage.getContent().forEach(formTemplate -> {
+            List<String> approvalDepartments = formTemplateRepository.findApprovalDepartmentsByFormTemplateId(formTemplate.getId());
+            formTemplate.setApprovalDepartments(approvalDepartments);
+        });
+
+        return responsePage;
+    }
+
+    public FormTemplateResponse getFormTemplateById(Long id) {
+        FormTemplate formTemplate = formTemplateRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("FormTemplate not found with id: " + id));
+        return formTemplateMapper.toResponse(formTemplate);
+    }
+
     @Transactional
-    public FormTemplateDto createFormTemplate(CreateFormTemplateRequest request) {
+    public FormTemplateResponse createFormTemplate(CreateFormTemplateRequest request) {
         FormTemplate formTemplate = new FormTemplate();
 
         formTemplate.setName(request.getName());
