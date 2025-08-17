@@ -182,6 +182,11 @@ public class DataInitializer implements CommandLineRunner {
             rejected.setName("REJECTED");
             rejected.setDescription("Từ chối");
             ticketStatusRepository.save(rejected);
+
+            TicketStatus forwarded = new TicketStatus();
+            forwarded.setName("FORWARDED");
+            forwarded.setDescription("Đã chuyển tiếp");
+            ticketStatusRepository.save(forwarded);
         }
     }
 
