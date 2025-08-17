@@ -30,6 +30,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     List<User> findByIsActive(Boolean isActive);
     
+    List<User> findByFullNameContainingIgnoreCase(String fullName);
+    
     @Query("SELECT u FROM User u WHERE u.department.id = :departmentId AND u.role.name = 'APPROVER'")
     List<User> findApproversByDepartment(@Param("departmentId") Long departmentId);
     
