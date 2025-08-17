@@ -32,7 +32,7 @@ public class TicketApproval {
     private ApprovalWorkflow workflowStep;
     
     @Column(name = "action", nullable = false, length = 50)
-    private String action; // APPROVE, REJECT, FORWARD
+    private ApprovalAction action; // APPROVE, REJECT, FORWARD
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id", nullable = false)
