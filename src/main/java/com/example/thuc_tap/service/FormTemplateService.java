@@ -1,131 +1,185 @@
 package com.example.thuc_tap.service;
 
-import com.example.thuc_tap.dto.request.CreateFormTemplateRequest;
-import com.example.thuc_tap.dto.request.FormTemplateFilterRequest;
-import com.example.thuc_tap.dto.response.FormTemplateFilterResponse;
-import com.example.thuc_tap.dto.response.FormTemplateResponse;
+import com.example.thuc_tap.dto.FormTemplateDto;
+import com.example.thuc_tap.dto.FormFieldDto;
+import com.example.thuc_tap.controller.FormTemplateController.FieldTypeDto;
 import com.example.thuc_tap.entity.*;
-import com.example.thuc_tap.mapper.FormTemplateMapper;
-import com.example.thuc_tap.repository.FieldTypeRepository;
-import com.example.thuc_tap.repository.FormTemplateRepository;
-import com.example.thuc_tap.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import com.example.thuc_tap.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
+/**
+ * Service xử lý form templates động
+ */
 @Service
-@RequiredArgsConstructor
+@Transactional
 public class FormTemplateService {
 
-    private final FormTemplateRepository formTemplateRepository;
-    private final FormTemplateMapper formTemplateMapper;
-    private final UserRepository userRepository;
-    private final FieldTypeRepository fieldTypeRepository;
+    @Autowired
+    private FormTemplateRepository formTemplateRepository;
 
-    public Page<FormTemplateFilterResponse> getAllFormTemplates(FormTemplateFilterRequest filter) {
-        Pageable pageable = PageRequest.of(
-                filter.getPage(),
-                filter.getPageSize(),
-                Sort.by(Sort.Direction.fromString(filter.getSortDirection()), filter.getSortBy())
-        );
+    @Autowired
+    private FormFieldRepository formFieldRepository;
 
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+    @Autowired
+    private FieldTypeRepository fieldTypeRepository;
 
-        Page<FormTemplateFilterResponse> responsePage = formTemplateRepository.findByCriteria(
-                filter.getKeyword(),
-                filter.getIsActive(),
-                filter.getCreatedById(),
-                filter.getApprovalDepartmentId(),
-                filter.getCreatedAtFrom() != null ? LocalDateTime.parse(filter.getCreatedAtFrom(), formatter) : null,
-                filter.getCreatedAtTo() != null ? LocalDateTime.parse(filter.getCreatedAtTo(), formatter) : null,
-                filter.getUpdatedAtFrom() != null ? LocalDateTime.parse(filter.getUpdatedAtFrom(), formatter) : null,
-                filter.getUpdatedAtTo() != null ? LocalDateTime.parse(filter.getUpdatedAtTo(), formatter) : null,
-                pageable
-        );
+    @Autowired
+    private UserRepository userRepository;
 
-        responsePage.getContent().forEach(formTemplate -> {
-            List<String> approvalDepartments = formTemplateRepository.findApprovalDepartmentsByFormTemplateId(formTemplate.getId());
-            formTemplate.setApprovalDepartments(approvalDepartments);
+    /**
+     * Lấy danh sách form templates đang hoạt động
+     */
+    public List<FormTemplateDto> getAllActiveFormTemplates() {
+        List<FormTemplate> templates = formTemplateRepository.findByIsActive(true);
+        return templates.stream().map(this::convertToDto).toList();
+    }
+
+    /**
+     * Lấy chi tiết form template
+     */
+    public Optional<FormTemplateDto> getFormTemplateById(Long formTemplateId) {
+        return formTemplateRepository.findById(formTemplateId).map(this::convertToDto);
+    }
+
+    /**
+     * Lấy danh sách fields của form template
+     */
+    public List<FormFieldDto> getFormFields(Long formTemplateId) {
+        List<FormField> fields = formFieldRepository.findByFormTemplateIdOrderByFieldOrder(formTemplateId);
+        return fields.stream().map(this::convertFieldToDto).toList();
+    }
+
+    /**
+     * Tạo form template mới
+     */
+    public FormTemplateDto createFormTemplate(FormTemplateDto formTemplateDto) {
+        User createdBy = userRepository.findById(formTemplateDto.getCreatedById())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        FormTemplate template = new FormTemplate();
+        template.setName(formTemplateDto.getName());
+        template.setDescription(formTemplateDto.getDescription());
+        template.setIsActive(true);
+        template.setCreatedBy(createdBy);
+
+        FormTemplate savedTemplate = formTemplateRepository.save(template);
+        return convertToDto(savedTemplate);
+    }
+
+    /**
+     * Thêm field vào form template
+     */
+    public FormFieldDto addFieldToTemplate(Long formTemplateId, FormFieldDto formFieldDto) {
+        FormTemplate template = formTemplateRepository.findById(formTemplateId)
+                .orElseThrow(() -> new RuntimeException("Form template not found"));
+
+        FieldType fieldType = fieldTypeRepository.findById(formFieldDto.getFieldTypeId())
+                .orElseThrow(() -> new RuntimeException("Field type not found"));
+
+        // Check if field name already exists in this template
+        if (formFieldRepository.existsByFormTemplateIdAndFieldName(formTemplateId, formFieldDto.getFieldName())) {
+            throw new RuntimeException("Field name already exists in this template");
+        }
+
+        FormField field = new FormField();
+        field.setFormTemplate(template);
+        field.setFieldName(formFieldDto.getFieldName());
+        field.setFieldLabel(formFieldDto.getFieldLabel());
+        field.setFieldType(fieldType);
+        field.setIsRequired(formFieldDto.getIsRequired());
+        field.setFieldOrder(formFieldDto.getFieldOrder());
+        // Note: fieldOptions and validationRules need JSON conversion
+        // For now, we'll set them as null or handle them later
+        field.setFieldOptions(null);
+        field.setValidationRules(null);
+
+        FormField savedField = formFieldRepository.save(field);
+        return convertFieldToDto(savedField);
+    }
+
+    /**
+     * Cập nhật field
+     */
+    public Optional<FormFieldDto> updateFormField(Long fieldId, FormFieldDto formFieldDto) {
+        return formFieldRepository.findById(fieldId).map(field -> {
+            field.setFieldLabel(formFieldDto.getFieldLabel());
+            field.setIsRequired(formFieldDto.getIsRequired());
+            field.setFieldOrder(formFieldDto.getFieldOrder());
+            // Note: fieldOptions and validationRules need JSON conversion
+            // For now, we'll keep existing values or set them as null
+            // field.setFieldOptions(null);
+            // field.setValidationRules(null);
+
+            // Update field type if changed
+            if (formFieldDto.getFieldTypeId() != null) {
+                FieldType fieldType = fieldTypeRepository.findById(formFieldDto.getFieldTypeId())
+                        .orElseThrow(() -> new RuntimeException("Field type not found"));
+                field.setFieldType(fieldType);
+            }
+
+            FormField savedField = formFieldRepository.save(field);
+            return convertFieldToDto(savedField);
         });
-
-        return responsePage;
     }
 
-    public FormTemplateResponse getFormTemplateById(Long id) {
-        FormTemplate formTemplate = formTemplateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("FormTemplate not found with id: " + id));
-        return formTemplateMapper.toResponse(formTemplate);
+    /**
+     * Xóa field
+     */
+    public boolean deleteFormField(Long fieldId) {
+        if (formFieldRepository.existsById(fieldId)) {
+            formFieldRepository.deleteById(fieldId);
+            return true;
+        }
+        return false;
     }
 
-    @Transactional
-    public FormTemplateResponse createFormTemplate(CreateFormTemplateRequest request) {
-        FormTemplate formTemplate = new FormTemplate();
+    /**
+     * Lấy danh sách field types
+     */
+    public List<FieldTypeDto> getAllFieldTypes() {
+        List<FieldType> fieldTypes = fieldTypeRepository.findAll();
+        return fieldTypes.stream()
+                .map(ft -> new FieldTypeDto(ft.getId(), ft.getName(), ft.getDescription()))
+                .toList();
+    }
 
-        formTemplate.setName(request.getName());
-        formTemplate.setDescription(request.getDescription());
-        formTemplate.setIsActive(request.getIsActive());
+    /**
+     * Convert FormTemplate Entity to DTO
+     */
+    private FormTemplateDto convertToDto(FormTemplate template) {
+        FormTemplateDto dto = new FormTemplateDto();
+        dto.setId(template.getId());
+        dto.setName(template.getName());
+        dto.setDescription(template.getDescription());
+        dto.setIsActive(template.getIsActive());
+        dto.setCreatedById(template.getCreatedBy().getId());
+        dto.setCreatedByName(template.getCreatedBy().getFullName());
+        dto.setCreatedAt(template.getCreatedAt() != null ? template.getCreatedAt().toString() : null);
+        dto.setUpdatedAt(template.getUpdatedAt() != null ? template.getUpdatedAt().toString() : null);
+        return dto;
+    }
 
-        User createdBy = userRepository.findById(request.getCreatedById())
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getCreatedById()));
-
-        formTemplate.setCreatedBy(createdBy);
-
-        // Handle form fields and approval workflows
-        List<FormField> formFields = request.getFormFields().stream()
-            .map(fieldDto -> {
-                FormField formField = new FormField();
-                formField.setFieldName(fieldDto.getFieldName());
-                formField.setFieldLabel(fieldDto.getFieldLabel());
-
-                FieldType fieldType = fieldTypeRepository.findById(fieldDto.getFieldTypeId())
-                        .orElseThrow(() -> new RuntimeException("FieldType not found: " + fieldDto.getFieldTypeId()));
-                formField.setFieldType(fieldType);
-                formField.setIsRequired(fieldDto.getIsRequired());
-                formField.setFieldOrder(fieldDto.getFieldOrder());
-                formField.setReadOnly(fieldDto.getReadOnly());
-
-                formField.setFieldOptions(fieldDto.getFieldOptions());
-
-                formField.setValidationRules(fieldDto.getValidationRules());
-                formField.setFormTemplate(formTemplate);
-
-                return formField;
-            })
-            .collect(Collectors.toList());
-        formTemplate.setFormFields(formFields);
-
-        List<ApprovalWorkflow> approvalWorkflows = request.getApprovalWorkflows().stream()
-            .map(workflowDto -> {
-                ApprovalWorkflow approvalWorkflow = new ApprovalWorkflow();
-                approvalWorkflow.setStepOrder(workflowDto.getStepOrder());
-
-                if (workflowDto.getDepartmentId() != null) {
-                    Department department = new Department();
-                    department.setId(workflowDto.getDepartmentId());
-                    approvalWorkflow.setDepartment(department);
-                } else {
-                    approvalWorkflow.setDepartment(null);
-                }
-
-                approvalWorkflow.setStepName(workflowDto.getStepName());
-                approvalWorkflow.setFormTemplate(formTemplate);
-
-                return approvalWorkflow;
-            })
-            .collect(Collectors.toList());
-        formTemplate.setApprovalWorkflows(approvalWorkflows);
-
-        FormTemplate savedFormTemplate = formTemplateRepository.save(formTemplate);
-
-        return formTemplateMapper.toResponse(savedFormTemplate);
+    /**
+     * Convert FormField Entity to DTO
+     */
+    private FormFieldDto convertFieldToDto(FormField field) {
+        FormFieldDto dto = new FormFieldDto();
+        dto.setFieldName(field.getFieldName());
+        dto.setFieldLabel(field.getFieldLabel());
+        dto.setFieldTypeId(field.getFieldType().getId());
+        dto.setFieldTypeName(field.getFieldType().getName());
+        dto.setIsRequired(field.getIsRequired());
+        dto.setFieldOrder(field.getFieldOrder());
+        
+        // Convert JSON string to appropriate types if needed
+        // For now, we'll skip fieldOptions and validationRules conversion
+        // as they need special handling for JSON conversion
+        
+        return dto;
     }
 }
