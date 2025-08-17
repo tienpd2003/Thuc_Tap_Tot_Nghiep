@@ -1,133 +1,155 @@
 package com.example.thuc_tap.controller;
 
-import com.example.thuc_tap.dto.FormTemplateDto;
-import com.example.thuc_tap.dto.FormFieldDto;
+//import com.example.thuc_tap.dto.FormTemplateDto;
+import com.example.thuc_tap.dto.request.CreateFormTemplateRequest;
+import com.example.thuc_tap.dto.request.FormTemplateFilterRequest;
+import com.example.thuc_tap.dto.response.FormTemplateFilterResponse;
+import com.example.thuc_tap.dto.response.FormTemplateResponse;
 import com.example.thuc_tap.service.FormTemplateService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-
-/**
- * Controller xử lý form templates động
- */
 @RestController
 @RequestMapping("/api/form-templates")
+@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class FormTemplateController {
 
-    @Autowired
-    private FormTemplateService formTemplateService;
+    private final FormTemplateService formTemplateService;
 
-    /**
-     * Lấy danh sách tất cả form templates đang hoạt động
-     */
     @GetMapping
-    public ResponseEntity<List<FormTemplateDto>> getAllActiveFormTemplates() {
-        List<FormTemplateDto> formTemplates = formTemplateService.getAllActiveFormTemplates();
-        return ResponseEntity.ok(formTemplates);
+    public ResponseEntity<Page<FormTemplateFilterResponse>> getAllFormTemplates(@Valid @ParameterObject @ModelAttribute FormTemplateFilterRequest filterRequest) {
+        return ResponseEntity.ok(formTemplateService.getAllFormTemplates(filterRequest));
     }
 
-    /**
-     * Lấy chi tiết form template và các fields
-     */
-    @GetMapping("/{formTemplateId}")
-    public ResponseEntity<FormTemplateDto> getFormTemplateById(@PathVariable Long formTemplateId) {
-        Optional<FormTemplateDto> formTemplate = formTemplateService.getFormTemplateById(formTemplateId);
-        return formTemplate.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping(value = "/{id}")
+    public ResponseEntity<FormTemplateResponse> getFormTemplate(@PathVariable Long id) {
+        return ResponseEntity.ok(formTemplateService.getFormTemplateById(id));
     }
 
-    /**
-     * Lấy danh sách fields của form template
-     */
-    @GetMapping("/{formTemplateId}/fields")
-    public ResponseEntity<List<FormFieldDto>> getFormFields(@PathVariable Long formTemplateId) {
-        List<FormFieldDto> fields = formTemplateService.getFormFields(formTemplateId);
-        return ResponseEntity.ok(fields);
-    }
-
-    /**
-     * Tạo form template mới (cho nhân viên tạo form động)
-     */
     @PostMapping
-    public ResponseEntity<FormTemplateDto> createFormTemplate(@Valid @RequestBody FormTemplateDto formTemplateDto) {
-        FormTemplateDto createdTemplate = formTemplateService.createFormTemplate(formTemplateDto);
-        return ResponseEntity.ok(createdTemplate);
-    }
-
-    /**
-     * Thêm field vào form template
-     */
-    @PostMapping("/{formTemplateId}/fields")
-    public ResponseEntity<FormFieldDto> addFieldToTemplate(
-            @PathVariable Long formTemplateId,
-            @Valid @RequestBody FormFieldDto formFieldDto) {
-        
-        FormFieldDto createdField = formTemplateService.addFieldToTemplate(formTemplateId, formFieldDto);
-        return ResponseEntity.ok(createdField);
-    }
-
-    /**
-     * Cập nhật field trong form template
-     */
-    @PutMapping("/{formTemplateId}/fields/{fieldId}")
-    public ResponseEntity<FormFieldDto> updateFormField(
-            @PathVariable Long formTemplateId,
-            @PathVariable Long fieldId,
-            @Valid @RequestBody FormFieldDto formFieldDto) {
-        
-        Optional<FormFieldDto> updatedField = formTemplateService.updateFormField(fieldId, formFieldDto);
-        return updatedField.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Xóa field khỏi form template
-     */
-    @DeleteMapping("/{formTemplateId}/fields/{fieldId}")
-    public ResponseEntity<Void> deleteFormField(
-            @PathVariable Long formTemplateId,
-            @PathVariable Long fieldId) {
-        
-        boolean deleted = formTemplateService.deleteFormField(fieldId);
-        return deleted ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
-    }
-
-    /**
-     * Lấy danh sách field types có sẵn
-     */
-    @GetMapping("/field-types")
-    public ResponseEntity<List<FieldTypeDto>> getFieldTypes() {
-        List<FieldTypeDto> fieldTypes = formTemplateService.getAllFieldTypes();
-        return ResponseEntity.ok(fieldTypes);
-    }
-
-    /**
-     * DTO cho Field Types
-     */
-    public static class FieldTypeDto {
-        private Long id;
-        private String name;
-        private String description;
-
-        public FieldTypeDto() {}
-
-        public FieldTypeDto(Long id, String name, String description) {
-            this.id = id;
-            this.name = name;
-            this.description = description;
-        }
-
-        // Getters and Setters
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
+    @Operation(
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            content = @Content(
+                mediaType = "application/json",
+                examples = {
+                    @ExampleObject(
+                        name = "Leave Request Template",
+                        summary = "Leave Request Form Template",
+                        description = "A complete example of a leave request form template",
+                        value = """
+                            {
+                              "name": "Leave Request",
+                              "description": "Mẫu đơn xin nghỉ phép dành cho nhân viên công ty",
+                              "isActive": true,
+                              "createdById": 3,
+                              "formFields": [
+                                {
+                                  "fieldName": "fullName",
+                                  "fieldLabel": "Họ và tên",
+                                  "fieldTypeId": 1,
+                                  "isRequired": true,
+                                  "fieldOrder": 1,
+                                  "readOnly": true
+                                },
+                                {
+                                  "fieldName": "employeeCode",
+                                  "fieldLabel": "Mã nhân viên",
+                                  "fieldTypeId": 1,
+                                  "isRequired": true,
+                                  "fieldOrder": 2,
+                                  "readOnly": true
+                                },
+                                {
+                                  "fieldName": "department",
+                                  "fieldLabel": "Phòng ban",
+                                  "fieldTypeId": 1,
+                                  "isRequired": true,
+                                  "fieldOrder": 3,
+                                  "readOnly": true
+                                },
+                                {
+                                  "fieldName": "leaveType",
+                                  "fieldLabel": "Loại nghỉ",
+                                  "fieldTypeId": 6,
+                                  "isRequired": true,
+                                  "fieldOrder": 4,
+                                  "fieldOptions": [
+                                    { "value": "annual", "label": "Nghỉ phép năm" },
+                                    { "value": "sick", "label": "Nghỉ ốm" },
+                                    { "value": "personal", "label": "Nghỉ việc riêng" },
+                                    { "value": "unpaid", "label": "Nghỉ không lương" }
+                                  ]
+                                },
+                                {
+                                  "fieldName": "startDate",
+                                  "fieldLabel": "Ngày bắt đầu",
+                                  "fieldTypeId": 3,
+                                  "isRequired": true,
+                                  "fieldOrder": 5
+                                },
+                                {
+                                  "fieldName": "endDate",
+                                  "fieldLabel": "Ngày kết thúc",
+                                  "fieldTypeId": 3,
+                                  "isRequired": true,
+                                  "fieldOrder": 6
+                                },
+                                {
+                                  "fieldName": "reason",
+                                  "fieldLabel": "Lý do",
+                                  "fieldTypeId": 7,
+                                  "isRequired": true,
+                                  "fieldOrder": 7,
+                                  "validationRules": {
+                                    "min": 10,
+                                    "max": 500
+                                  }
+                                },
+                                {
+                                  "fieldName": "note",
+                                  "fieldLabel": "Ghi chú",
+                                  "fieldTypeId": 7,
+                                  "fieldOrder": 8,
+                                  "validationRules": {
+                                    "min": 10,
+                                    "max": 500
+                                  }
+                                }
+                              ],
+                              "approvalWorkflows": [
+                                {
+                                  "stepOrder": 1,
+                                  "departmentId": null,
+                                  "stepName": "Trưởng phòng duyệt"
+                                },
+                                {
+                                  "stepOrder": 2,
+                                  "departmentId": 1,
+                                  "stepName": "Phòng nhân sự duyệt"
+                                },
+                                {
+                                  "stepOrder": 3,
+                                  "departmentId": 2,
+                                  "stepName": "Phòng kế toán duyệt"
+                                }
+                              ]
+                            }
+                            """
+                    )
+                }
+            )
+        )
+    )
+    public ResponseEntity<FormTemplateResponse> createFormTemplate(@RequestBody CreateFormTemplateRequest request) {
+        FormTemplateResponse formTemplate = formTemplateService.createFormTemplate(request);
+        return ResponseEntity.ok(formTemplate);
     }
 }
