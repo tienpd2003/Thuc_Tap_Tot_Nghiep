@@ -1,117 +1,201 @@
 package com.example.thuc_tap.service;
 
-import com.example.thuc_tap.dto.TicketApprovalDto;
 import com.example.thuc_tap.entity.*;
 import com.example.thuc_tap.repository.*;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
-@Transactional
 public class ApprovalService {
-    
-    private final TicketApprovalRepository ticketApprovalRepository;
-    private final UserRepository userRepository;
-    private final TicketStatusRepository ticketStatusRepository;
-    
-    /**
-     * Tạo approval tasks từ approval workflows của template
-     */
-    public void createApprovalTasksFromTemplate(Ticket ticket) {
-        if (ticket.getFormTemplate() == null || 
-            ticket.getFormTemplate().getApprovalWorkflows() == null ||
-            ticket.getFormTemplate().getApprovalWorkflows().isEmpty()) {
-            return; // Không có approval workflow
+
+    @Autowired
+    private ApprovalTaskRepository approvalTaskRepository;
+
+    @Autowired
+    private TicketApprovalRepository ticketApprovalRepository;
+
+    @Autowired
+    private TicketRepository ticketRepository;
+
+    @Autowired
+    private TicketStatusRepository ticketStatusRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ApprovalWorkflowRepository approvalWorkflowRepository; // optional
+
+    // --------------- Approve ----------------
+    @Transactional
+    public void approve(Long taskId, String note, Long actingUserId) {
+        ApprovalTask task = approvalTaskRepository.findById(taskId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Approval task not found"));
+
+        // Optional: authorization check: ensure actingUserId == task.getApprover().getId()
+        if (task.getApprover() == null || !task.getApprover().getId().equals(actingUserId)) {
+            // You may allow role-based approvers; adapt accordingly
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not allowed to approve this task");
         }
-        
-        // Kiểm tra đã tạo approval tasks chưa
-        if (ticketApprovalRepository.existsByTicketId(ticket.getId())) {
-            return; // Đã tạo rồi
+
+        // Atomic claim (returns 1 if succeeded, 0 if already acted)
+        int rows = approvalTaskRepository.updateStatusIfPending(taskId, ApprovalTaskStatus.APPROVED);
+        if (rows == 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Task already processed");
         }
-        
-        // Lấy status PENDING
-        TicketStatus pendingStatus = ticketStatusRepository.findByName("PENDING")
-                .orElseThrow(() -> new RuntimeException("PENDING status not found"));
-        
-        // Tạo approval tasks từ workflows
-        List<ApprovalWorkflow> workflows = ticket.getFormTemplate().getApprovalWorkflows();
-        
-        for (ApprovalWorkflow workflow : workflows) {
-            TicketApproval approval = new TicketApproval();
-            approval.setTicket(ticket);
-            approval.setWorkflowStep(workflow);
-            approval.setAction("PENDING"); // Trạng thái ban đầu
-            approval.setStatus(pendingStatus);
-            
-            // Không assign approver cụ thể - bất kỳ APPROVER nào trong department có thể approve
-            // approval.setApprover(null); // Sẽ được assign khi có người approve
-            
-            ticketApprovalRepository.save(approval);
+
+        // create audit (TicketApproval)
+        Ticket ticket = task.getTicket();
+        TicketApproval audit = new TicketApproval();
+        audit.setTicket(ticket);
+        audit.setApprover(task.getApprover());
+        // attempt to populate workflowStep if your ApprovalTask has link to workflow step
+        if (task.getWorkflowStep() != null) {
+            audit.setWorkflowStep(task.getWorkflowStep());
+        }
+        audit.setAction(ApprovalAction.valueOf("APPROVE"));
+        // set status on audit (optional): you might set the ticket status entity or null
+        Optional<TicketStatus> statusOpt = ticketStatusRepository.findByName("APPROVED");
+        statusOpt.ifPresent(audit::setStatus);
+        audit.setComments(note);
+        audit.setCreatedAt(LocalDateTime.now());
+        ticketApprovalRepository.save(audit);
+
+        // re-evaluate whether this step is complete, and advance workflow if needed
+        boolean stepComplete = isStepComplete(ticket.getId(), task.getStepIndex());
+        if (stepComplete) {
+            advanceWorkflowOrFinalize(ticket, task.getStepIndex());
         }
     }
-    
-    /**
-     * Lấy danh sách approval tasks của ticket
-     */
-    public List<TicketApprovalDto> getTicketApprovals(Long ticketId) {
-        List<TicketApproval> approvals = ticketApprovalRepository.findByTicketIdOrderByStepOrder(ticketId);
-        return approvals.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * Lấy approval task đang pending đầu tiên
-     */
-    public TicketApprovalDto getNextPendingApproval(Long ticketId) {
-        return ticketApprovalRepository.findFirstPendingByTicketId(ticketId)
-                .map(this::convertToDto)
-                .orElse(null);
-    }
-    
-    /**
-     * Lấy danh sách approvers có thể approve cho workflow step
-     */
-    public List<User> getAvailableApprovers(Long ticketApprovalId) {
-        TicketApproval approval = ticketApprovalRepository.findById(ticketApprovalId)
-                .orElseThrow(() -> new RuntimeException("Approval not found"));
-        
-        if (approval.getWorkflowStep().getDepartment() != null) {
-            return userRepository.findByDepartmentIdAndRoleName(
-                approval.getWorkflowStep().getDepartment().getId(), "APPROVER");
+
+    // --------------- Reject ----------------
+    @Transactional
+    public void reject(Long taskId, String reason, Long actingUserId) {
+        ApprovalTask task = approvalTaskRepository.findById(taskId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Approval task not found"));
+
+        if (task.getApprover() == null || !task.getApprover().getId().equals(actingUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not allowed to reject this task");
         }
-        
-        return List.of();
+
+        int rows = approvalTaskRepository.updateStatusIfPending(taskId, ApprovalTaskStatus.REJECTED);
+        if (rows == 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Task already processed");
+        }
+
+        // create audit
+        TicketApproval audit = new TicketApproval();
+        audit.setTicket(task.getTicket());
+        audit.setApprover(task.getApprover());
+        audit.setWorkflowStep(task.getWorkflowStep());
+        audit.setAction(ApprovalAction.valueOf("REJECT"));
+        audit.setComments(reason);
+        audit.setCreatedAt(LocalDateTime.now());
+        ticketApprovalRepository.save(audit);
+
+        // Business policy: mark ticket rejected and cancel other pending tasks in same step
+        Ticket ticket = task.getTicket();
+        ticketStatusRepository.findByName("REJECTED").ifPresent(ticket::setCurrentStatus);
+        ticketRepository.save(ticket);
+
+        // Cancel other pending tasks in the same step (optional)
+        List<ApprovalTask> sameStep = approvalTaskRepository.findByTicketIdOrderByStepIndex(ticket.getId());
+        sameStep.stream()
+                .filter(t -> t.getStepIndex().equals(task.getStepIndex()))
+                .filter(t -> t.getStatus() == ApprovalTaskStatus.PENDING)
+                .forEach(t -> {
+                    approvalTaskRepository.updateStatusIfPending(t.getId(), ApprovalTaskStatus.REJECTED);
+                    TicketApproval cancelAudit = new TicketApproval();
+                    cancelAudit.setTicket(ticket);
+                    cancelAudit.setApprover(task.getApprover()); // actor who caused cancel
+                    cancelAudit.setWorkflowStep(t.getWorkflowStep());
+                    cancelAudit.setAction(ApprovalAction.valueOf("REJECT"));
+                    cancelAudit.setComments("Auto-cancel due to reject");
+                    cancelAudit.setCreatedAt(LocalDateTime.now());
+                    ticketApprovalRepository.save(cancelAudit);
+                });
     }
-    
-    /**
-     * Convert entity to DTO
-     */
-    private TicketApprovalDto convertToDto(TicketApproval approval) {
-        TicketApprovalDto dto = new TicketApprovalDto();
-        dto.setId(approval.getId());
-        dto.setTicketId(approval.getTicket().getId());
-        dto.setStepOrder(approval.getWorkflowStep().getStepOrder());
-        dto.setStepName(approval.getWorkflowStep().getStepName());
-        dto.setAction(approval.getAction());
-        dto.setComments(approval.getComments());
-        dto.setCreatedAt(approval.getCreatedAt());
-        
-        if (approval.getApprover() != null) {
-            dto.setApproverId(approval.getApprover().getId());
-            dto.setApproverName(approval.getApprover().getFullName());
+
+    // --------------- Forward ----------------
+    @Transactional
+    public void forward(Long taskId, Long nextApproverId, String note, Long actingUserId) {
+        ApprovalTask task = approvalTaskRepository.findById(taskId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Approval task not found"));
+
+        if (task.getApprover() == null || !task.getApprover().getId().equals(actingUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not allowed to forward this task");
         }
-        
-        if (approval.getWorkflowStep().getDepartment() != null) {
-            dto.setDepartmentId(approval.getWorkflowStep().getDepartment().getId());
-            dto.setDepartmentName(approval.getWorkflowStep().getDepartment().getName());
+
+        int rows = approvalTaskRepository.updateStatusIfPending(taskId, ApprovalTaskStatus.FORWARDED);
+        if (rows == 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Task already processed");
         }
-        
-        return dto;
+
+        User next = userRepository.findById(nextApproverId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Next approver not found"));
+
+        // create new task assigned to next approver in same step
+        ApprovalTask newTask = new ApprovalTask();
+        newTask.setTicket(task.getTicket());
+        newTask.setStepIndex(task.getStepIndex());
+        newTask.setApprover(next);
+        newTask.setApproverRole(next.getRole() != null ? next.getRole().getName() : null);
+        newTask.setStatus(ApprovalTaskStatus.PENDING);
+        newTask.setAssignedAt(LocalDateTime.from(Instant.now()));
+        approvalTaskRepository.save(newTask);
+
+        // audit
+        TicketApproval audit = new TicketApproval();
+        audit.setTicket(task.getTicket());
+        audit.setApprover(task.getApprover()); // original actor
+        audit.setWorkflowStep(task.getWorkflowStep());
+        audit.setAction(ApprovalAction.valueOf("FORWARD"));
+        audit.setComments(note);
+        audit.setForwardedToDepartment(next.getDepartment());
+        audit.setCreatedAt(LocalDateTime.now());
+        ticketApprovalRepository.save(audit);
+    }
+
+    // ---------------- helper methods ----------------
+
+    private boolean isStepComplete(Long ticketId, Integer stepIndex) {
+        List<ApprovalTask> tasks = approvalTaskRepository.findByTicketIdOrderByStepIndex(ticketId);
+        // filter to the step
+        List<ApprovalTask> stepTasks = tasks.stream().filter(t -> t.getStepIndex().equals(stepIndex)).toList();
+
+        if (stepTasks.isEmpty()) return true;
+
+        // If only one task or step type sequential (no workflow definition available), treat single approve -> complete
+        if (stepTasks.size() == 1) {
+            return stepTasks.stream().allMatch(t -> t.getStatus() == ApprovalTaskStatus.APPROVED);
+        }
+
+        // If you store workflow definition, you can evaluate rule (all/any) here.
+        // For now, fallback: if any APPROVED => complete (you can change to 'all' by config)
+        return stepTasks.stream().anyMatch(t -> t.getStatus() == ApprovalTaskStatus.APPROVED);
+    }
+
+    private void advanceWorkflowOrFinalize(Ticket ticket, Integer currentStep) {
+        // Attempt to load workflow by ticket.formTemplate -> ApprovalWorkflow and create next step tasks.
+        // If no workflow or next step, mark ticket final status APPROVED.
+        if (ticket.getFormTemplate() != null && approvalWorkflowRepository != null) {
+            Optional<ApprovalWorkflow> wfOpt = approvalWorkflowRepository.findById(ticket.getFormTemplate().getId());
+            if (wfOpt.isPresent()) {
+                // parse JSON and create next tasks - left for your workflow format
+                // << implement per your ApprovalWorkflow.definition JSON >>
+                return;
+            }
+        }
+        // fallback: mark ticket as final APPROVED
+        ticketStatusRepository.findByName("APPROVED").ifPresent(ticket::setCurrentStatus);
+        ticketRepository.save(ticket);
     }
 }

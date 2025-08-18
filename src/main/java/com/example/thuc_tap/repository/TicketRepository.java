@@ -62,4 +62,18 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     
     @Query("SELECT COUNT(t) FROM Ticket t WHERE t.requester.id = :requesterId AND t.currentStatus.name = :statusName")
     Long countByRequesterIdAndStatusName(@Param("requesterId") Long requesterId, @Param("statusName") String statusName);
+    
+    // Admin Statistics Methods - Phương thức thống kê cho Admin Dashboard
+    
+    @Query("SELECT t.currentStatus.name, COUNT(t) FROM Ticket t GROUP BY t.currentStatus.name")
+    List<Object[]> findTicketCountGroupByStatusRaw();
+    
+    @Query("SELECT t.currentStatus.name, COUNT(t) FROM Ticket t WHERE t.department.id = :departmentId GROUP BY t.currentStatus.name")
+    List<Object[]> findTicketCountByDepartmentGroupByStatusRaw(@Param("departmentId") Long departmentId);
+    
+    @Query("SELECT COUNT(t) FROM Ticket t WHERE t.createdAt BETWEEN :startDate AND :endDate")
+    Long countByCreatedAtBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+    
+    @Query("SELECT COUNT(t) FROM Ticket t WHERE t.currentStatus.name = :statusName AND t.createdAt <= :endDate")
+    Long countByCurrentStatusNameAndCreatedAtLessThanEqual(@Param("statusName") String statusName, @Param("endDate") LocalDateTime endDate);
 }

@@ -32,6 +32,12 @@ public class ApprovalWorkflow {
     
     @Column(name = "step_name", nullable = false, length = 100)
     private String stepName;
+
+    @Column(name = "name", length = 150)
+    private String name;
+
+    @Column(name = "definition")
+    private String definition;
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

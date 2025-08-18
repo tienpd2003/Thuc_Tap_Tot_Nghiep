@@ -30,9 +30,10 @@ public class TicketApproval {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workflow_step_id", nullable = false)
     private ApprovalWorkflow workflowStep;
-    
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "action", nullable = false, length = 50)
-    private String action; // APPROVE, REJECT, FORWARD
+    private ApprovalAction action; // APPROVE, REJECT, FORWARD
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id", nullable = false)

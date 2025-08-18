@@ -40,4 +40,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     @Query("SELECT u FROM User u WHERE u.department.id = :departmentId AND u.role.name = :roleName ORDER BY u.id ASC")
     List<User> findByDepartmentIdAndRoleName(@Param("departmentId") Long departmentId, @Param("roleName") String roleName);
+    // Admin Statistics Methods - Phương thức thống kê cho Admin Dashboard
+    
+    @Query("SELECT COUNT(u) FROM User u WHERE u.isActive = :isActive")
+    Long countByIsActive(@Param("isActive") Boolean isActive);
+    
+    @Query("SELECT COUNT(u) FROM User u WHERE u.department.id = :departmentId AND u.isActive = :isActive")
+    Long countByDepartmentIdAndIsActive(@Param("departmentId") Long departmentId, @Param("isActive") Boolean isActive);
 }

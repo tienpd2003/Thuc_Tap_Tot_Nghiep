@@ -39,7 +39,7 @@ public class TicketService {
     private PriorityLevelRepository priorityLevelRepository;
     
     @Autowired
-    private ApprovalService approvalService;
+    private TicketApprovalService approvalService;
 
     /**
      * Lấy danh sách ticket của nhân viên với phân trang
