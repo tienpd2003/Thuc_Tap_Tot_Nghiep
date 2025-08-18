@@ -134,8 +134,9 @@ jspm_packages/
 MyJob.txt
 SystemDesign.txt
 README.md
-DBDesign.txt
 DBDesign.sql
 API_TESTING.md
 TEST_EXAMPLES.md
 ARCHITECTURE_IMPROVEMENTS.md
+WorkingAPIs.md
+ADMIN_DASHBOARD_IMPLEMENTATION.md

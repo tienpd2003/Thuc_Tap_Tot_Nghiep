@@ -4,6 +4,7 @@ import com.example.thuc_tap.dto.RoleDto;
 import com.example.thuc_tap.dto.UserDto;
 import com.example.thuc_tap.entity.Role;
 import com.example.thuc_tap.entity.User;
+import com.example.thuc_tap.mapper.UserMapper;
 import com.example.thuc_tap.repository.RoleRepository;
 import com.example.thuc_tap.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +25,13 @@ public class RoleService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserMapper userMapper; // Loại bỏ method convertToDto trùng lặp - sử dụng Mapper thay thế
+
     public List<RoleDto> getAllRoles() {
         List<Role> roles = roleRepository.findAll();
         return roles.stream()
-                .map(this::convertToDto)
+                .map(this::convertToDto) 
                 .collect(Collectors.toList());
     }
 
@@ -38,7 +42,7 @@ public class RoleService {
 
     public Optional<RoleDto> getRoleByName(String name) {
         return roleRepository.findByName(name)
-                .map(this::convertToDto);
+                .map(this::convertToDto); 
     }
 
     public RoleDto createRole(RoleDto roleDto) {
@@ -87,14 +91,14 @@ public class RoleService {
     public List<UserDto> getUsersByRole(Long roleId) {
         List<User> users = userRepository.findByRoleId(roleId);
         return users.stream()
-                .map(this::convertUserToDto)
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     public List<UserDto> getUsersByRoleName(String roleName) {
         List<User> users = userRepository.findByRoleName(roleName);
         return users.stream()
-                .map(this::convertUserToDto)
+                .map(userMapper::toDto) 
                 .collect(Collectors.toList());
     }
 
@@ -115,10 +119,9 @@ public class RoleService {
     private RoleDto convertToDtoWithUsers(Role role) {
         RoleDto dto = convertToDto(role);
 
-        // Add users list for detailed view
         List<User> users = userRepository.findByRoleId(role.getId());
         List<UserDto> userDtos = users.stream()
-                .map(this::convertUserToDto)
+                .map(userMapper::toDto) 
                 .collect(Collectors.toList());
         dto.setUsers(userDtos);
 
@@ -132,26 +135,4 @@ public class RoleService {
         return role;
     }
 
-    private UserDto convertUserToDto(User user) {
-        UserDto dto = new UserDto();
-        dto.setId(user.getId());
-        dto.setEmployeeCode(user.getEmployeeCode());
-        dto.setUsername(user.getUsername());
-        dto.setFullName(user.getFullName());
-        dto.setEmail(user.getEmail());
-        dto.setPhone(user.getPhone());
-        dto.setIsActive(user.getIsActive());
-
-        if (user.getDepartment() != null) {
-            dto.setDepartmentId(user.getDepartment().getId());
-            dto.setDepartmentName(user.getDepartment().getName());
-        }
-
-        if (user.getRole() != null) {
-            dto.setRoleId(user.getRole().getId());
-            dto.setRoleName(user.getRole().getName());
-        }
-
-        return dto;
-    }
 }
