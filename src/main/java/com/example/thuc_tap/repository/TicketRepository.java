@@ -46,4 +46,20 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     
     @Query("SELECT COUNT(t) FROM Ticket t WHERE t.department.id = :departmentId AND t.currentStatus.name = :statusName")
     Long countByDepartmentAndStatus(@Param("departmentId") Long departmentId, @Param("statusName") String statusName);
+    
+    // Additional methods for Employee functionality
+    @Query("SELECT t FROM Ticket t WHERE t.requester.id = :requesterId AND t.currentStatus.name = :statusName")
+    List<Ticket> findByRequesterIdAndStatusName(@Param("requesterId") Long requesterId, @Param("statusName") String statusName);
+    
+    @Query("SELECT t FROM Ticket t WHERE t.requester.id = :requesterId AND LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    List<Ticket> findByRequesterIdAndTitleContainingIgnoreCase(@Param("requesterId") Long requesterId, @Param("keyword") String keyword);
+    
+    @Query("SELECT t FROM Ticket t WHERE t.requester.id = :requesterId AND t.createdAt BETWEEN :startDate AND :endDate")
+    List<Ticket> findByRequesterIdAndCreatedAtBetween(@Param("requesterId") Long requesterId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+    
+    @Query("SELECT COUNT(t) FROM Ticket t WHERE t.requester.id = :requesterId")
+    Long countByRequesterId(@Param("requesterId") Long requesterId);
+    
+    @Query("SELECT COUNT(t) FROM Ticket t WHERE t.requester.id = :requesterId AND t.currentStatus.name = :statusName")
+    Long countByRequesterIdAndStatusName(@Param("requesterId") Long requesterId, @Param("statusName") String statusName);
 }

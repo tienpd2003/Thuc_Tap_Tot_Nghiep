@@ -4,7 +4,6 @@ import com.example.thuc_tap.dto.UserDto;
 import com.example.thuc_tap.entity.Department;
 import com.example.thuc_tap.entity.Role;
 import com.example.thuc_tap.entity.User;
-import com.example.thuc_tap.mapper.UserMapper;
 import com.example.thuc_tap.repository.DepartmentRepository;
 import com.example.thuc_tap.repository.RoleRepository;
 import com.example.thuc_tap.repository.UserRepository;
@@ -17,7 +16,6 @@ import java.util.Optional;
 /**
  * Service class để xử lý logic nghiệp vụ cho User
  * Đã được merge và cải tiến với:
- * - Mapper pattern để chuyển đổi Entity <-> DTO
  * - Logic đặc biệt cho ADMIN role (không cần phòng ban)
  * - Các chức năng tìm kiếm và vô hiệu hóa người dùng
  */
@@ -33,31 +31,26 @@ public class UserService {
     @Autowired
     private RoleRepository roleRepository;
 
-    // Sử dụng UserMapper để chuyển đổi Entity <-> DTO (cải tiến từ mapper pattern)
-    @Autowired
-    private UserMapper userMapper;
-
     /**
      * Lấy danh sách tất cả người dùng
-     * Sử dụng mapper để chuyển đổi từ Entity sang DTO
      */
     public List<UserDto> getAllUsers() {
         List<User> users = userRepository.findAll();
-        return users.stream().map(userMapper::toDto).toList();
+        return users.stream().map(this::convertToDto).toList();
     }
 
     /**
      * Lấy thông tin người dùng theo ID
      */
     public Optional<UserDto> getUserById(Long id) {
-        return userRepository.findById(id).map(userMapper::toDto);
+        return userRepository.findById(id).map(this::convertToDto);
     }
 
     /**
      * Lấy thông tin người dùng theo username
      */
     public Optional<UserDto> getUserByUsername(String username) {
-        return userRepository.findByUsername(username).map(userMapper::toDto);
+        return userRepository.findByUsername(username).map(this::convertToDto);
     }
 
     /**
@@ -97,7 +90,7 @@ public class UserService {
         }
 
         User savedUser = userRepository.save(user);
-        return userMapper.toDto(savedUser);
+        return convertToDto(savedUser);
     }
 
     /**
@@ -131,7 +124,7 @@ public class UserService {
             }
 
             User savedUser = userRepository.save(user);
-            return userMapper.toDto(savedUser);
+            return convertToDto(savedUser);
         });
     }
 
@@ -166,6 +159,32 @@ public class UserService {
      */
     public List<UserDto> findUsersByName(String name) {
         List<User> users = userRepository.findByFullNameContainingIgnoreCase(name);
-        return users.stream().map(userMapper::toDto).toList();
+        return users.stream().map(this::convertToDto).toList();
+    }
+
+    /**
+     * Convert Entity to DTO
+     */
+    private UserDto convertToDto(User user) {
+        UserDto dto = new UserDto();
+        dto.setId(user.getId());
+        dto.setEmployeeCode(user.getEmployeeCode());
+        dto.setUsername(user.getUsername());
+        dto.setFullName(user.getFullName());
+        dto.setEmail(user.getEmail());
+        dto.setPhone(user.getPhone());
+        dto.setIsActive(user.getIsActive());
+
+        if (user.getDepartment() != null) {
+            dto.setDepartmentId(user.getDepartment().getId());
+            dto.setDepartmentName(user.getDepartment().getName());
+        }
+
+        if (user.getRole() != null) {
+            dto.setRoleId(user.getRole().getId());
+            dto.setRoleName(user.getRole().getName());
+        }
+
+        return dto;
     }
 }

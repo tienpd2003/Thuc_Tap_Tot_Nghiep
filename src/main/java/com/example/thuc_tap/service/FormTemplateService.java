@@ -6,6 +6,7 @@ import com.example.thuc_tap.dto.response.FormTemplateFilterResponse;
 import com.example.thuc_tap.dto.response.FormTemplateResponse;
 import com.example.thuc_tap.entity.*;
 import com.example.thuc_tap.mapper.FormTemplateMapper;
+import com.example.thuc_tap.repository.DepartmentRepository;
 import com.example.thuc_tap.repository.FieldTypeRepository;
 import com.example.thuc_tap.repository.FormTemplateRepository;
 import com.example.thuc_tap.repository.UserRepository;
@@ -30,6 +31,7 @@ public class FormTemplateService {
     private final FormTemplateMapper formTemplateMapper;
     private final UserRepository userRepository;
     private final FieldTypeRepository fieldTypeRepository;
+    private final DepartmentRepository departmentRepository;
 
     public Page<FormTemplateFilterResponse> getAllFormTemplates(FormTemplateFilterRequest filter) {
         Pageable pageable = PageRequest.of(
@@ -109,8 +111,8 @@ public class FormTemplateService {
                 approvalWorkflow.setStepOrder(workflowDto.getStepOrder());
 
                 if (workflowDto.getDepartmentId() != null) {
-                    Department department = new Department();
-                    department.setId(workflowDto.getDepartmentId());
+                    Department department = departmentRepository.findById(workflowDto.getDepartmentId())
+                        .orElseThrow(() -> new RuntimeException("Department not found with id: " + workflowDto.getDepartmentId()));
                     approvalWorkflow.setDepartment(department);
                 } else {
                     approvalWorkflow.setDepartment(null);

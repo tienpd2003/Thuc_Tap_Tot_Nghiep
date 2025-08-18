@@ -16,9 +16,8 @@ public interface FormTemplateMapper {
 
     @Mapping(source = "createdBy.id", target = "createdById")
     @Mapping(source = ".", target = "createdByName", qualifiedByName = "mapCreatedByName")
-//    @Mapping(source = "createdAt", target = "createdAt", dateFormat = "dd/MM/yyyy HH:mm")
-//    @Mapping(source = "updatedAt", target = "updatedAt", dateFormat = "dd/MM/yyyy HH:mm")
-//    FormTemplateDto toResponse(FormTemplate formTemplate);
+    @Mapping(source = ".", target = "createdAt", qualifiedByName = "mapCreatedAt")
+    @Mapping(source = ".", target = "updatedAt", qualifiedByName = "mapUpdatedAt")
     FormTemplateResponse toResponse(FormTemplate formTemplate);
 
     @Mapping(source = "fieldType.id", target = "fieldTypeId")
@@ -31,6 +30,18 @@ public interface FormTemplateMapper {
     @Named("mapCreatedByName")
     default String mapCreatedByName(FormTemplate formTemplate) {
         return formTemplate.getCreatedBy().getFullName() + " (" + formTemplate.getCreatedBy().getUsername() + ")";
+    }
+
+    @Named("mapCreatedAt")
+    default String mapCreatedAt(FormTemplate formTemplate) {
+        return formTemplate.getCreatedAt() != null ? 
+            formTemplate.getCreatedAt().format(java.time.format.DateTimeFormatter.ISO_DATE_TIME) : null;
+    }
+
+    @Named("mapUpdatedAt")
+    default String mapUpdatedAt(FormTemplate formTemplate) {
+        return formTemplate.getUpdatedAt() != null ? 
+            formTemplate.getUpdatedAt().format(java.time.format.DateTimeFormatter.ISO_DATE_TIME) : null;
     }
 
 }
