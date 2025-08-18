@@ -4,6 +4,8 @@ import com.example.thuc_tap.dto.DepartmentDto;
 import com.example.thuc_tap.dto.UserDto;
 import com.example.thuc_tap.entity.Department;
 import com.example.thuc_tap.entity.User;
+import com.example.thuc_tap.mapper.DepartmentMapper;
+import com.example.thuc_tap.mapper.UserMapper;
 import com.example.thuc_tap.repository.DepartmentRepository;
 import com.example.thuc_tap.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,23 +26,51 @@ public class DepartmentService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private DepartmentMapper departmentMapper; // Loại bỏ method convertToDto trùng lặp - sử dụng Mapper thay thế
+
+    @Autowired
+    private UserMapper userMapper; // Loại bỏ method convertToDto trùng lặp - sử dụng Mapper thay thế
+
     public List<DepartmentDto> getAllDepartments() {
         List<Department> departments = departmentRepository.findAll();
         return departments.stream()
-                .map(this::convertToDto)
+                .map(department -> {
+                    DepartmentDto dto = departmentMapper.toDto(department);
+                    // Thêm user count để hiển thị thống kê
+                    long userCount = userRepository.findByDepartmentId(department.getId()).size();
+                    dto.setUserCount(userCount);
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
     public List<DepartmentDto> getActiveDepartments() {
         List<Department> departments = departmentRepository.findByIsActive(true);
         return departments.stream()
-                .map(this::convertToDto)
+                .map(department -> {
+                    DepartmentDto dto = departmentMapper.toDto(department);
+                    // Thêm user count để hiển thị thống kê
+                    long userCount = userRepository.findByDepartmentId(department.getId()).size();
+                    dto.setUserCount(userCount);
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
     public Optional<DepartmentDto> getDepartmentById(Long id) {
         return departmentRepository.findById(id)
-                .map(this::convertToDtoWithUsers);
+                .map(department -> {
+                    DepartmentDto dto = departmentMapper.toDto(department);
+                    // Thêm user count và danh sách users cho detailed view
+                    List<User> users = userRepository.findByDepartmentId(department.getId());
+                    dto.setUserCount((long) users.size());
+                    List<UserDto> userDtos = users.stream()
+                            .map(userMapper::toDto)
+                            .collect(Collectors.toList());
+                    dto.setUsers(userDtos);
+                    return dto;
+                });
     }
 
     public DepartmentDto createDepartment(DepartmentDto departmentDto) {
@@ -49,9 +79,12 @@ public class DepartmentService {
             throw new RuntimeException("Department with name '" + departmentDto.getName() + "' already exists");
         }
 
-        Department department = convertToEntity(departmentDto);
+        Department department = departmentMapper.toEntity(departmentDto);
         Department savedDepartment = departmentRepository.save(department);
-        return convertToDto(savedDepartment);
+        DepartmentDto dto = departmentMapper.toDto(savedDepartment);
+        // Thêm user count (sẽ là 0 cho department mới)
+        dto.setUserCount(0L);
+        return dto;
     }
 
     public Optional<DepartmentDto> updateDepartment(Long id, DepartmentDto departmentDto) {
@@ -68,7 +101,11 @@ public class DepartmentService {
                     existingDepartment.setIsActive(departmentDto.getIsActive());
 
                     Department updatedDepartment = departmentRepository.save(existingDepartment);
-                    return convertToDto(updatedDepartment);
+                    DepartmentDto dto = departmentMapper.toDto(updatedDepartment);
+                    // Thêm user count để hiển thị thống kê
+                    long userCount = userRepository.findByDepartmentId(updatedDepartment.getId()).size();
+                    dto.setUserCount(userCount);
+                    return dto;
                 });
     }
 
@@ -100,67 +137,8 @@ public class DepartmentService {
     public List<UserDto> getUsersByDepartment(Long departmentId) {
         List<User> users = userRepository.findByDepartmentId(departmentId);
         return users.stream()
-                .map(this::convertUserToDto)
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
-    private DepartmentDto convertToDto(Department department) {
-        DepartmentDto dto = new DepartmentDto();
-        dto.setId(department.getId());
-        dto.setName(department.getName());
-        dto.setDescription(department.getDescription());
-        dto.setIsActive(department.getIsActive());
-        dto.setCreatedAt(department.getCreatedAt());
-        dto.setUpdatedAt(department.getUpdatedAt());
-
-        // Count users in this department
-        long userCount = userRepository.findByDepartmentId(department.getId()).size();
-        dto.setUserCount(userCount);
-
-        return dto;
-    }
-
-    private DepartmentDto convertToDtoWithUsers(Department department) {
-        DepartmentDto dto = convertToDto(department);
-
-        // Add users list for detailed view
-        List<User> users = userRepository.findByDepartmentId(department.getId());
-        List<UserDto> userDtos = users.stream()
-                .map(this::convertUserToDto)
-                .collect(Collectors.toList());
-        dto.setUsers(userDtos);
-
-        return dto;
-    }
-
-    private Department convertToEntity(DepartmentDto departmentDto) {
-        Department department = new Department();
-        department.setName(departmentDto.getName());
-        department.setDescription(departmentDto.getDescription());
-        department.setIsActive(departmentDto.getIsActive() != null ? departmentDto.getIsActive() : true);
-        return department;
-    }
-
-    private UserDto convertUserToDto(User user) {
-        UserDto dto = new UserDto();
-        dto.setId(user.getId());
-        dto.setEmployeeCode(user.getEmployeeCode());
-        dto.setUsername(user.getUsername());
-        dto.setFullName(user.getFullName());
-        dto.setEmail(user.getEmail());
-        dto.setPhone(user.getPhone());
-        dto.setIsActive(user.getIsActive());
-
-        if (user.getDepartment() != null) {
-            dto.setDepartmentId(user.getDepartment().getId());
-            dto.setDepartmentName(user.getDepartment().getName());
-        }
-
-        if (user.getRole() != null) {
-            dto.setRoleId(user.getRole().getId());
-            dto.setRoleName(user.getRole().getName());
-        }
-
-        return dto;
-    }
 }
