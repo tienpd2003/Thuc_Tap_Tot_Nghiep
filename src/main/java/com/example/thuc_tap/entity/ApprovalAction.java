@@ -1,4 +1,7 @@
 package com.example.thuc_tap.entity;
 
-public class ApprovalAction {
+public enum ApprovalAction {
+    APPROVE,
+    REJECT,
+    FORWARD
 }
