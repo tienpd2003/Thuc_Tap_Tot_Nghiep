@@ -24,7 +24,7 @@ public class TicketApproval {
     private Ticket ticket;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "approver_id", nullable = false)
+    @JoinColumn(name = "approver_id") // NULL ban đầu, sẽ được set khi có người approve
     private User approver;
     
     @ManyToOne(fetch = FetchType.LAZY)

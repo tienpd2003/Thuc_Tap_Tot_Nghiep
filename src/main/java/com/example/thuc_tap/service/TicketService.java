@@ -37,6 +37,9 @@ public class TicketService {
 
     @Autowired
     private PriorityLevelRepository priorityLevelRepository;
+    
+    @Autowired
+    private TicketApprovalService approvalService;
 
     /**
      * Lấy danh sách ticket của nhân viên với phân trang
@@ -115,6 +118,10 @@ public class TicketService {
         }
 
         Ticket savedTicket = ticketRepository.save(ticket);
+        
+        // Tạo approval tasks từ template workflows
+        approvalService.createApprovalTasksFromTemplate(savedTicket);
+        
         return convertToDto(savedTicket);
     }
 
@@ -219,6 +226,11 @@ public class TicketService {
         if (ticket.getPriority() != null) {
             dto.setPriorityId(ticket.getPriority().getId());
             dto.setPriorityName(ticket.getPriority().getName());
+        }
+        
+        // Load approvals nếu ticket đã có ID
+        if (ticket.getId() != null) {
+            dto.setApprovals(approvalService.getTicketApprovals(ticket.getId()));
         }
 
         return dto;
