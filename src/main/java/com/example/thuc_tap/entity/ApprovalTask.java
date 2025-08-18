@@ -35,6 +35,10 @@ public class ApprovalTask {
     @JoinColumn(name = "ticket_id", nullable = false)
     private Ticket ticket;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "workflow_step_id")
+    private ApprovalWorkflow workflowStep;
+
     @Column(name = "workflow_instance_id")
     private Long workflowInstanceId;
 
