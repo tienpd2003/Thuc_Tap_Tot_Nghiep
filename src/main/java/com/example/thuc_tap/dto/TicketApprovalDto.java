@@ -17,10 +17,14 @@ public class TicketApprovalDto {
     private String approverName;
     private Long workflowStepId;
     private String workflowStepName;
+    private Integer stepOrder;
+    private String stepName;
     private String action;
     private Long statusId;
     private String statusName;
     private String comments;
+    private Long departmentId;
+    private String departmentName;
     private Long forwardedToDepartmentId;
     private String forwardedToDepartmentName;
     private LocalDateTime createdAt;
