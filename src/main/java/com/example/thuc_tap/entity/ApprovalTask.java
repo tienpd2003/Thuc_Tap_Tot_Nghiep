@@ -1,8 +1,11 @@
 package com.example.thuc_tap.entity;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -12,12 +15,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
 public class ApprovalTask {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private ApprovalTaskStatus status; // e.g., PENDING, APPROVED, REJECTED
 
@@ -42,8 +47,9 @@ public class ApprovalTask {
     @Column(name = "workflow_instance_id")
     private Long workflowInstanceId;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "meta", columnDefinition = "jsonb")
-    private String meta; // raw JSON string
+    private JsonNode meta;
 
     @Column(name = "assigned_at")
     private LocalDateTime assignedAt;

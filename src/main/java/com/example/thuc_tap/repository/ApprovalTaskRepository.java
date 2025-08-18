@@ -1,6 +1,7 @@
 package com.example.thuc_tap.repository;
 
 import com.example.thuc_tap.entity.ApprovalTask;
+import com.example.thuc_tap.entity.ApprovalTaskStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
@@ -15,11 +16,12 @@ public interface ApprovalTaskRepository extends JpaRepository<ApprovalTask, Long
     List<ApprovalTask> findByTicketIdOrderByStepIndex(Long ticketId);
 
     @Modifying
-    @Query("UPDATE ApprovalTask at SET at.status = :newStatus, at.actedAt = CURRENT_TIMESTAMP WHERE at.id = :taskId AND at.status = 'PENDING'")
-    int updateStatusIfPending(@Param("taskId") Long taskId, @Param("newStatus") String newStatus);
+    @Query("UPDATE ApprovalTask at SET at.status = :newStatus, at.actedAt = CURRENT_TIMESTAMP " +
+            "WHERE at.id = :taskId AND at.status = com.example.thuc_tap.entity.ApprovalTaskStatus.PENDING")
+    int updateStatusIfPending(@Param("taskId") Long taskId, @Param("newStatus") ApprovalTaskStatus newStatus);
 
     @Query("SELECT at FROM ApprovalTask at JOIN at.ticket t " +
-            "WHERE at.status = 'PENDING' " +
+            "WHERE at.status = com.example.thuc_tap.entity.ApprovalTaskStatus.PENDING " +
             "AND (:departmentId IS NULL OR t.department.id = :departmentId) " +
             "AND (:type IS NULL OR t.formTemplate.id = :type) " +
             "AND (:priority IS NULL OR t.priority.id = :priority) " +

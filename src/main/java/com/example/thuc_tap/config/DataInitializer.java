@@ -2,9 +2,15 @@ package com.example.thuc_tap.config;
 
 import com.example.thuc_tap.entity.*;
 import com.example.thuc_tap.repository.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -27,7 +33,23 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private PriorityLevelRepository priorityLevelRepository;
 
+    @Autowired
+    private TicketRepository ticketRepository;
+
+    @Autowired
+    private FormTemplateRepository formTemplateRepository;
+
+    @Autowired
+    private ApprovalTaskRepository approvalTaskRepository;
+
+    @Autowired
+    private TicketApprovalRepository ticketApprovalRepository;
+
+    @Autowired
+    private ApprovalWorkflowRepository approvalWorkflowRepository;
+
     @Override
+    @Transactional
     public void run(String... args) throws Exception {
         initializeRoles();
         initializeDepartments();
@@ -35,6 +57,8 @@ public class DataInitializer implements CommandLineRunner {
         initializeFieldTypes();
         initializeTicketStatuses();
         initializePriorityLevels();
+        initializeSampleFormTemplateAndWorkflow();
+        initializeSampleTicketAndApprovalTask();
     }
 
     private void initializeRoles() {
@@ -212,5 +236,113 @@ public class DataInitializer implements CommandLineRunner {
             urgent.setDescription("Khẩn cấp");
             priorityLevelRepository.save(urgent);
         }
+    }
+    private void initializeSampleFormTemplateAndWorkflow() {
+        // if a form template exists, keep it
+        if (formTemplateRepository.count() > 0) {
+            // ensure workflow exists
+            if (approvalWorkflowRepository.count() == 0) {
+                FormTemplate any = formTemplateRepository.findAll().stream().findFirst().orElse(null);
+                if (any != null) {
+                    ApprovalWorkflow wf = new ApprovalWorkflow();
+                    wf.setName("Default IT approval");
+                    wf.setFormTemplate(any);
+                    wf.setStepOrder(0);
+                    wf.setStepName("Step 1 - Approver review");       // <- required
+                    wf.setDepartment(any.getCreatedBy() != null ? any.getCreatedBy().getDepartment() : null);
+                    // simple JSON string (if your column is jsonb you'll need proper JSON binding)
+                    wf.setDefinition("{ \"steps\": [ { \"index\": 0, \"type\": \"parallel\", \"rule\": \"any\", \"approvers\": [ { \"type\": \"role\", \"name\": \"APPROVER\" } ] } ] }");
+                    approvalWorkflowRepository.save(wf);
+                }
+            }
+            return;
+        }
+
+        // find a user to set as createdBy (prefer admin)
+        User createdBy = userRepository.findByUsername("admin")
+                .or(() -> userRepository.findByUsername("approver"))
+                .or(() -> userRepository.findAll().stream().findFirst())
+                .orElse(null);
+
+        if (createdBy == null) {
+            // users not ready yet; skip
+            return;
+        }
+
+        // create and save FormTemplate with createdBy set
+        FormTemplate t = new FormTemplate();
+        t.setName("Request - IT equipment");
+        t.setDescription("Request for new hardware / monitor");
+        t.setIsActive(true);
+        t.setCreatedBy(createdBy);        // IMPORTANT for NOT NULL created_by
+        FormTemplate saved = formTemplateRepository.save(t);
+
+        // create a linked ApprovalWorkflow and set required fields
+        ApprovalWorkflow wf = new ApprovalWorkflow();
+        wf.setName("Default IT approval");
+        wf.setFormTemplate(saved);                        // required if column is NOT NULL
+        wf.setStepOrder(0);                               // required in your entity
+        wf.setStepName("Step 1 - Approver review");      // required in DB
+        wf.setDepartment(saved.getCreatedBy().getDepartment()); // optional but helpful
+        wf.setDefinition("{ \"steps\": [ { \"index\": 0, \"type\": \"parallel\", \"rule\": \"any\", \"approvers\": [ { \"type\": \"role\", \"name\": \"APPROVER\" } ] } ] }");
+        approvalWorkflowRepository.save(wf);
+    }
+
+
+    private void initializeSampleTicketAndApprovalTask() {
+        // do not create if approval tasks already exist
+        if (approvalTaskRepository.count() > 0) return;
+
+        // find requester (employee) and approver
+        Optional<User> requesterOpt = userRepository.findByUsername("employee");
+        Optional<User> approverOpt = userRepository.findByUsername("approver");
+        if (requesterOpt.isEmpty() || approverOpt.isEmpty()) {
+            // users not ready yet; skip
+            return;
+        }
+
+        User requester = requesterOpt.get();
+        User approver = approverOpt.get();
+
+        // pick a pending status
+        TicketStatus pendingStatus = ticketStatusRepository.findByName("PENDING").orElse(null);
+        if (pendingStatus == null) {
+            // cannot create ticket without status
+            return;
+        }
+
+        // pick a form template (if any)
+        FormTemplate template = formTemplateRepository.findAll().stream().findFirst().orElse(null);
+
+        // create ticket
+        Ticket ticket = new Ticket();
+        ticket.setTicketCode("TICKET-" + System.currentTimeMillis());
+        ticket.setTitle("Yêu cầu màn hình mới");
+        ticket.setDescription("Xin cấp 01 màn hình 24 inch cho nhân viên");
+        ticket.setRequester(requester);
+        ticket.setFormTemplate(template);
+        ticket.setDepartment(requester.getDepartment());
+        ticket.setCurrentStatus(pendingStatus);
+        ticket.setCreatedAt(LocalDateTime.now());
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        // create approval task assigned to approver
+        ApprovalTask task = new ApprovalTask();
+        task.setTicket(savedTicket);
+        task.setStepIndex(0);
+        task.setApprover(approver);
+        task.setApproverRole(approver.getRole() != null ? approver.getRole().getName() : null);
+        task.setStatus(ApprovalTaskStatus.valueOf("PENDING"));
+        task.setAssignedAt(LocalDateTime.now());
+
+        // ===== create a JsonNode meta (avoid using raw JSON string) =====
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode metaNode = mapper.createObjectNode();
+        metaNode.put("createdBy", requester.getUsername());
+        metaNode.put("note", "auto-created by initializer");
+        metaNode.put("ticketId", savedTicket.getId() != null ? savedTicket.getId() : -1);
+        task.setMeta(metaNode);
+
+        approvalTaskRepository.save(task);
     }
 }

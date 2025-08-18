@@ -47,7 +47,7 @@ public class ApprovalService {
         }
 
         // Atomic claim (returns 1 if succeeded, 0 if already acted)
-        int rows = approvalTaskRepository.updateStatusIfPending(taskId, ApprovalTaskStatus.APPROVED.name());
+        int rows = approvalTaskRepository.updateStatusIfPending(taskId, ApprovalTaskStatus.APPROVED);
         if (rows == 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Task already processed");
         }
@@ -86,7 +86,7 @@ public class ApprovalService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not allowed to reject this task");
         }
 
-        int rows = approvalTaskRepository.updateStatusIfPending(taskId, ApprovalTaskStatus.REJECTED.name());
+        int rows = approvalTaskRepository.updateStatusIfPending(taskId, ApprovalTaskStatus.REJECTED);
         if (rows == 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Task already processed");
         }
@@ -112,7 +112,7 @@ public class ApprovalService {
                 .filter(t -> t.getStepIndex().equals(task.getStepIndex()))
                 .filter(t -> t.getStatus() == ApprovalTaskStatus.PENDING)
                 .forEach(t -> {
-                    approvalTaskRepository.updateStatusIfPending(t.getId(), ApprovalTaskStatus.REJECTED.name());
+                    approvalTaskRepository.updateStatusIfPending(t.getId(), ApprovalTaskStatus.REJECTED);
                     TicketApproval cancelAudit = new TicketApproval();
                     cancelAudit.setTicket(ticket);
                     cancelAudit.setApprover(task.getApprover()); // actor who caused cancel
@@ -134,7 +134,7 @@ public class ApprovalService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not allowed to forward this task");
         }
 
-        int rows = approvalTaskRepository.updateStatusIfPending(taskId, ApprovalTaskStatus.FORWARDED.name());
+        int rows = approvalTaskRepository.updateStatusIfPending(taskId, ApprovalTaskStatus.FORWARDED);
         if (rows == 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Task already processed");
         }

@@ -78,6 +78,12 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.7.0-RC1</version>
         </dependency>
+        <dependency>
+            <groupId>com.vladmihalcea</groupId>
+            <artifactId>hibernate-types-60</artifactId>
+            <version>2.21.1</version> <!-- adjust if you prefer a different compatible version -->
+        </dependency>
+
     </dependencies>
 
     <build>
