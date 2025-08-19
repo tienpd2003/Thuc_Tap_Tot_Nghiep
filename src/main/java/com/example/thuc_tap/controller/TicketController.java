@@ -4,6 +4,13 @@ import com.example.thuc_tap.dto.TicketDto;
 import com.example.thuc_tap.dto.TicketFormDataDto;
 import com.example.thuc_tap.service.TicketService;
 import com.example.thuc_tap.service.TicketFormDataService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +25,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/tickets")
 @CrossOrigin(origins = "*")
+@Tag(name = "Ticket Management", description = "APIs for managing tickets")
 public class TicketController {
 
     @Autowired
@@ -29,11 +37,99 @@ public class TicketController {
     /**
      * Tạo ticket mới
      */
+    @Operation(
+        summary = "Tạo ticket mới",
+        description = "Tạo một ticket mới với form template và approval workflow",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Thông tin ticket cần tạo",
+            required = true,
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = TicketDto.class),
+                examples = {
+                    @ExampleObject(
+                        name = "Leave Request Example",
+                        summary = "Ví dụ đơn xin nghỉ phép",
+                        description = "Một ví dụ hoàn chỉnh về đơn xin nghỉ phép với form data",
+                        value = """
+                            {
+                              "title": "Yêu cầu nghỉ phép",
+                              "description": "Tôi muốn xin nghỉ phép từ ngày 15/01 đến 20/01 để du lịch với gia đình",
+                              "requesterId": 1,
+                              "departmentId": 1,
+                              "formTemplateId": 2,
+                              "priorityId": 2,
+                              "dueDate": "2024-01-10T17:00:00",
+                              "formData": [
+                                {
+                                  "fieldId": 1,
+                                  "fieldName": "start_date",
+                                  "fieldLabel": "Ngày bắt đầu",
+                                  "fieldValue": "2024-01-15",
+                                  "fieldType": "DATE"
+                                },
+                                {
+                                  "fieldId": 2,
+                                  "fieldName": "end_date", 
+                                  "fieldLabel": "Ngày kết thúc",
+                                  "fieldValue": "2024-01-20",
+                                  "fieldType": "DATE"
+                                },
+                                {
+                                  "fieldId": 3,
+                                  "fieldName": "reason",
+                                  "fieldLabel": "Lý do nghỉ phép",
+                                  "fieldValue": "Du lịch với gia đình",
+                                  "fieldType": "TEXTAREA"
+                                }
+                              ]
+                            }
+                            """
+                    ),
+                    @ExampleObject(
+                        name = "Equipment Request Example",
+                        summary = "Ví dụ đơn xin thiết bị",
+                        description = "Ví dụ về đơn xin cấp thiết bị văn phòng",
+                        value = """
+                            {
+                              "title": "Yêu cầu cấp laptop mới",
+                              "description": "Cần laptop mới để làm việc",
+                              "requesterId": 1,
+                              "departmentId": 7,
+                              "formTemplateId": 3,
+                              "priorityId": 1,
+                              "dueDate": "2024-01-15T17:00:00",
+                              "formData": [
+                                {
+                                  "fieldId": 4,
+                                  "fieldName": "equipment_type",
+                                  "fieldLabel": "Loại thiết bị",
+                                  "fieldValue": "laptop",
+                                  "fieldType": "SELECT"
+                                },
+                                {
+                                  "fieldId": 5,
+                                  "fieldName": "specifications",
+                                  "fieldLabel": "Thông số kỹ thuật",
+                                  "fieldValue": "Core i7, 16GB RAM, 512GB SSD",
+                                  "fieldType": "TEXTAREA"
+                                }
+                              ]
+                            }
+                            """
+                    )
+                }
+            )
+        )
+    )
+    
+    
     @PostMapping
     public ResponseEntity<TicketDto> createTicket(@Valid @RequestBody TicketDto ticketDto) {
         TicketDto createdTicket = ticketService.createTicket(ticketDto);
         return ResponseEntity.ok(createdTicket);
     }
+
 
     /**
      * Lấy chi tiết ticket
