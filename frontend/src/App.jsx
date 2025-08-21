@@ -1,8 +1,10 @@
+import React from 'react';
+import { RouterProvider } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
-import store from './store';
-import './App.css';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { CssBaseline } from '@mui/material';
+import { router } from './router/index.jsx';
+import { store } from './store';
 
 // Create Material-UI theme
 const theme = createTheme({
@@ -13,9 +15,35 @@ const theme = createTheme({
     secondary: {
       main: '#dc004e',
     },
+    background: {
+      default: '#f5f5f5',
+    },
   },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h4: {
+      fontWeight: 600,
+    },
+    h6: {
+      fontWeight: 500,
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
   },
 });
 
@@ -24,23 +52,7 @@ function App() {
     <Provider store={store}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <BrowserRouter>
-          <div className="App">
-            <h1>Admin Dashboard</h1>
-            <p>🚀 Infrastructure setup complete!</p>
-            <p>📊 Ready for PHASE 2: Layout & Navigation</p>
-            <div>
-              <h3>✅ Completed:</h3>
-              <ul>
-                <li>Redux Store với 4 slices</li>
-                <li>API Services cho Users, Departments, Roles, Dashboard</li>
-                <li>Material-UI Theme setup</li>
-                <li>Folder structure hoàn chỉnh</li>
-                <li>Utility functions</li>
-              </ul>
-            </div>
-          </div>
-        </BrowserRouter>
+        <RouterProvider router={router} />
       </ThemeProvider>
     </Provider>
   );

@@ -2,7 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import createSagaMiddleware from 'redux-saga';
 
 // Import reducers - ADMIN FOCUSED ONLY
-import authReducer from './slices/authSlice';
+// import authReducer from './slices/authSlice';
 import userReducer from './slices/userSlice';
 import departmentReducer from './slices/departmentSlice';
 import dashboardReducer from './slices/dashboardSlice';
@@ -17,7 +17,7 @@ const sagaMiddleware = createSagaMiddleware();
 // Configure store với Redux Toolkit
 const store = configureStore({
   reducer: {
-    auth: authReducer,           // Simple role switching for testing
+    // auth: authReducer,           // Simple role switching for testing
     users: userReducer,          // *** User management (MyJob)
     departments: departmentReducer, // *** Department management (MyJob)
     dashboard: dashboardReducer, // *** Admin dashboard statistics (MyJob)
@@ -38,4 +38,5 @@ const store = configureStore({
 // Run the root saga
 sagaMiddleware.run(rootSaga);
 
+export { store };
 export default store;

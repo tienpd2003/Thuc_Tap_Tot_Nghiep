@@ -177,4 +177,13 @@ export const {
   resetDashboardState,
 } = dashboardSlice.actions;
 
+// Action creators for sagas
+export const fetchQuickStats = () => ({ type: 'dashboard/fetchQuickStats' });
+export const fetchUsersByDepartment = () => ({ type: 'dashboard/fetchUsersByDepartment' });
+export const fetchUsersByRole = () => ({ type: 'dashboard/fetchUsersByRole' });
+export const fetchOverviewStats = (period = 'week') => ({ 
+  type: 'dashboard/fetchOverviewStats', 
+  payload: { period } 
+});
+
 export default dashboardSlice.reducer;

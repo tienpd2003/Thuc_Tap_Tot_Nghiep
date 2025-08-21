@@ -27,10 +27,21 @@ export const API_ENDPOINTS = {
 
 // Admin Navigation Routes
 export const ROUTES = {
-  ADMIN_DASHBOARD: '/admin',
-  ADMIN_USERS: '/admin/users',
-  ADMIN_DEPARTMENTS: '/admin/departments',
-  ADMIN_REPORTS: '/admin/reports',
+  ADMIN: {
+    DASHBOARD: '/admin/dashboard',
+    USERS: {
+      LIST: '/admin/users',
+      CREATE: '/admin/users/new',
+      EDIT: (id) => `/admin/users/${id}/edit`,
+    },
+    DEPARTMENTS: {
+      LIST: '/admin/departments', 
+      CREATE: '/admin/departments/new',
+      EDIT: (id) => `/admin/departments/${id}/edit`,
+    },
+    REPORTS: '/admin/reports',
+    SETTINGS: '/admin/settings',
+  },
 };
 
 // User Roles (for admin role assignment)
@@ -49,13 +60,13 @@ export const ROLE_LABELS = {
 
 // Chart Colors for Admin Dashboard
 export const CHART_COLORS = {
-  PRIMARY: '#1976d2',
-  SECONDARY: '#dc004e',
-  SUCCESS: '#2e7d32',
-  WARNING: '#ed6c02',
-  ERROR: '#d32f2f',
-  INFO: '#0288d1',
-  CHART_PALETTE: ['#1976d2', '#dc004e', '#2e7d32', '#ed6c02', '#9c27b0', '#ff5722'],
+  primary: '#1976d2',
+  secondary: '#dc004e', 
+  success: '#2e7d32',
+  warning: '#ed6c02',
+  error: '#d32f2f',
+  info: '#0288d1',
+  palette: ['#1976d2', '#dc004e', '#2e7d32', '#ed6c02', '#9c27b0', '#ff5722'],
 };
 
 // Admin Table Configuration

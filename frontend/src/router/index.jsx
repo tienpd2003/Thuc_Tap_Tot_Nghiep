@@ -5,6 +5,7 @@ import { ROUTES } from '../constants';
 
 // Admin Pages
 import AdminDashboard from '../pages/admin/AdminDashboard';
+import TestDashboard from '../pages/admin/TestDashboard';
 import UserList from '../pages/admin/users/UserList';
 import UserForm from '../pages/admin/users/UserForm';
 import DepartmentList from '../pages/admin/departments/DepartmentList';
