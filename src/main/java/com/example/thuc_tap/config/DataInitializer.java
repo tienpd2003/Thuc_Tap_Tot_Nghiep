@@ -197,7 +197,7 @@
 //             TicketStatus approved = new TicketStatus();
 //             approved.setName("APPROVED");
 //             approved.setDescription("Đã duyệt");
-//             ticketStatusRepository.save(approved);
+//             ticketStatusRepository.save(approved);   
 
 //             TicketStatus rejected = new TicketStatus();
 //             rejected.setName("REJECTED");

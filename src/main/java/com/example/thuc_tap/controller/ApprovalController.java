@@ -3,9 +3,12 @@ package com.example.thuc_tap.controller;
 import com.example.thuc_tap.dto.request.ApproveRequest;
 import com.example.thuc_tap.dto.request.RejectRequest;
 import com.example.thuc_tap.dto.request.ForwardRequest;
+import com.example.thuc_tap.dto.response.TicketApprovalsResponse;
 import com.example.thuc_tap.entity.ApprovalTask;
+import com.example.thuc_tap.entity.Ticket;
 import com.example.thuc_tap.service.ApprovalService;
 import com.example.thuc_tap.repository.ApprovalTaskRepository;
+import com.example.thuc_tap.service.TicketApprovalService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +21,13 @@ public class ApprovalController {
 
     private final ApprovalService approvalService;
     private final ApprovalTaskRepository approvalTaskRepository;
+    private final TicketApprovalService ticketApprovalService;
 
     public ApprovalController(ApprovalService approvalService,
-                              ApprovalTaskRepository approvalTaskRepository) {
+                              ApprovalTaskRepository approvalTaskRepository, TicketApprovalService ticketApprovalService) {
         this.approvalService = approvalService;
         this.approvalTaskRepository = approvalTaskRepository;
+        this.ticketApprovalService = ticketApprovalService;
     }
 
     // Pending queue with filters (pageable)
@@ -38,9 +43,9 @@ public class ApprovalController {
 
     // Ticket details + approvals history — you can implement a DTO wrapper
     @GetMapping("/{ticketId}")
-    public ResponseEntity<?> ticketApprovals(@PathVariable Long ticketId) {
-        // implement in service to return ticket, tasks, and ticket_approvals
-        return ResponseEntity.ok().build();
+    public ResponseEntity<TicketApprovalsResponse> ticketApprovals(@PathVariable Long ticketId) {
+        TicketApprovalsResponse payload = ticketApprovalService.getTicketApprovalsPayload(ticketId);
+        return ResponseEntity.ok(payload);
     }
 
     @PostMapping("/{ticketId}/approve")

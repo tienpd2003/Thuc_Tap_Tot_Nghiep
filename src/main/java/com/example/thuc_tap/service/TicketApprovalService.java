@@ -1,11 +1,14 @@
 package com.example.thuc_tap.service;
 
 import com.example.thuc_tap.dto.TicketApprovalDto;
+import com.example.thuc_tap.dto.response.TicketApprovalsResponse;
 import com.example.thuc_tap.entity.*;
 import com.example.thuc_tap.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,6 +21,7 @@ public class TicketApprovalService {
     private final TicketApprovalRepository ticketApprovalRepository;
     private final UserRepository userRepository;
     private final TicketStatusRepository ticketStatusRepository;
+    private final TicketRepository ticketRepository;
     
     /**
      * Tạo approval tasks từ approval workflows của template
@@ -63,6 +67,43 @@ public class TicketApprovalService {
         return approvals.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+    }
+
+    public TicketApprovalsResponse getTicketApprovalsPayload(Long ticketId) {
+        // load ticket (this class is transactional so relationships can be accessed)
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ticket not found"));
+
+        // approvals (history)
+        List<TicketApprovalDto> approvals = getTicketApprovals(ticketId);
+
+        // next pending task (may be null)
+        TicketApprovalDto nextPending = getNextPendingApproval(ticketId);
+
+        TicketApprovalsResponse r = new TicketApprovalsResponse();
+        r.setTicketId(ticket.getId());
+        r.setTicketCode(ticket.getTicketCode());
+        r.setTitle(ticket.getTitle());
+        r.setCreatedAt(ticket.getCreatedAt());
+
+        // requester: many schemas name the relationship 'requester' (see your tickets table requester_id)
+        try {
+            if (ticket.getRequester() != null) {
+                r.setRequesterId(ticket.getRequester().getId());
+                r.setRequesterName(ticket.getRequester().getFullName());
+            }
+        } catch (Exception e) {
+            // defensive: if your Ticket entity uses a different field name, ignore and continue
+        }
+
+        if (ticket.getCurrentStatus() != null) {
+            try { r.setCurrentStatus(ticket.getCurrentStatus().getName()); }
+            catch (Exception ignored) {}
+        }
+
+        r.setApprovals(approvals);
+        r.setNextPending(nextPending);
+        return r;
     }
     
     /**
