@@ -1,35 +1,49 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Provider } from 'react-redux';
+import { BrowserRouter } from 'react-router-dom';
+import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import store from './store';
+import './App.css';
+
+// Create Material-UI theme
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#dc004e',
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+  },
+});
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BrowserRouter>
+          <div className="App">
+            <h1>Admin Dashboard</h1>
+            <p>🚀 Infrastructure setup complete!</p>
+            <p>📊 Ready for PHASE 2: Layout & Navigation</p>
+            <div>
+              <h3>✅ Completed:</h3>
+              <ul>
+                <li>Redux Store với 4 slices</li>
+                <li>API Services cho Users, Departments, Roles, Dashboard</li>
+                <li>Material-UI Theme setup</li>
+                <li>Folder structure hoàn chỉnh</li>
+                <li>Utility functions</li>
+              </ul>
+            </div>
+          </div>
+        </BrowserRouter>
+      </ThemeProvider>
+    </Provider>
+  );
 }
 
-export default App
+export default App;

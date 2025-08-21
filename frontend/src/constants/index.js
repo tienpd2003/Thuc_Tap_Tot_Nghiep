@@ -1,0 +1,90 @@
+// API Base URL
+export const API_BASE_URL = 'http://localhost:8080/api';
+
+// Admin API Endpoints (MyJob scope only)
+export const API_ENDPOINTS = {
+  // User Management (7 APIs)
+  USERS: '/users',
+  USERS_SEARCH: '/users/search',
+  USERS_DEACTIVATE: (id) => `/users/${id}/deactivate`,
+  
+  // Department Management (8 APIs)
+  DEPARTMENTS: '/departments',
+  DEPARTMENTS_ACTIVE: '/departments?activeOnly=true',
+  DEPARTMENTS_USERS: (id) => `/departments/${id}/users`,
+  DEPARTMENTS_DEACTIVATE: (id) => `/departments/${id}/deactivate`,
+  
+  // Roles (for user assignment only)
+  ROLES: '/roles',
+  ROLES_USERS: (id) => `/roles/${id}/users`,
+  
+  // Admin Dashboard Stats (4 APIs)
+  ADMIN_STATS_OVERVIEW: '/admin/stats/overview',
+  ADMIN_STATS_DEPARTMENTS: '/admin/stats/departments',
+  ADMIN_STATS_DAILY: '/admin/stats/daily',
+  ADMIN_STATS_QUICK: '/admin/stats/quick',
+};
+
+// Admin Navigation Routes
+export const ROUTES = {
+  ADMIN_DASHBOARD: '/admin',
+  ADMIN_USERS: '/admin/users',
+  ADMIN_DEPARTMENTS: '/admin/departments',
+  ADMIN_REPORTS: '/admin/reports',
+};
+
+// User Roles (for admin role assignment)
+export const USER_ROLES = {
+  ADMIN: 'ADMIN',
+  APPROVER: 'APPROVER', 
+  EMPLOYEE: 'EMPLOYEE',
+};
+
+// Role Labels (Vietnamese)
+export const ROLE_LABELS = {
+  [USER_ROLES.ADMIN]: 'Quản trị viên',
+  [USER_ROLES.APPROVER]: 'Người phê duyệt',
+  [USER_ROLES.EMPLOYEE]: 'Nhân viên',
+};
+
+// Chart Colors for Admin Dashboard
+export const CHART_COLORS = {
+  PRIMARY: '#1976d2',
+  SECONDARY: '#dc004e',
+  SUCCESS: '#2e7d32',
+  WARNING: '#ed6c02',
+  ERROR: '#d32f2f',
+  INFO: '#0288d1',
+  CHART_PALETTE: ['#1976d2', '#dc004e', '#2e7d32', '#ed6c02', '#9c27b0', '#ff5722'],
+};
+
+// Admin Table Configuration
+export const TABLE_CONFIG = {
+  DEFAULT_PAGE_SIZE: 10,
+  PAGE_SIZE_OPTIONS: [5, 10, 25, 50],
+};
+
+// Form Validation Messages (Vietnamese)
+export const VALIDATION_MESSAGES = {
+  REQUIRED: 'Trường này là bắt buộc',
+  EMAIL_INVALID: 'Email không hợp lệ',
+  EMAIL_UNIQUE: 'Email đã tồn tại trong hệ thống',
+  PHONE_INVALID: 'Số điện thoại không hợp lệ',
+  EMPLOYEE_CODE_UNIQUE: 'Mã nhân viên đã tồn tại',
+  PASSWORD_MIN_LENGTH: 'Mật khẩu phải có ít nhất 6 ký tự',
+  DEPARTMENT_REQUIRED: 'Phải chọn phòng ban',
+  ROLE_REQUIRED: 'Phải chọn vai trò',
+};
+
+// Dashboard Stats Periods
+export const STATS_PERIODS = {
+  WEEK: 'week',
+  MONTH: 'month',
+  YEAR: 'year',
+};
+
+export const PERIOD_LABELS = {
+  [STATS_PERIODS.WEEK]: '7 ngày qua',
+  [STATS_PERIODS.MONTH]: '30 ngày qua',
+  [STATS_PERIODS.YEAR]: '1 năm qua',
+};
