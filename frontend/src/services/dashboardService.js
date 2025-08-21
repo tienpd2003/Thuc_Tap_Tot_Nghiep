@@ -1,26 +1,35 @@
 import apiClient from './apiClient';
 import { API_ENDPOINTS } from '../constants';
 
-// Admin Dashboard API service - mapping tới 4 Admin Stats APIs đã có
+// Admin Dashboard API service - mapping to AdminController endpoints
 export const dashboardService = {
-  // GET /api/admin/stats/overview?period=week|month|year - Dashboard tổng quan
-  getOverviewStats: (period = 'week') => {
+  // GET /api/admin/stats/quick - Quick stats for dashboard widgets
+  getQuickStats: () => {
+    return apiClient.get(API_ENDPOINTS.ADMIN_STATS_QUICK);
+  },
+
+  // GET /api/admin/stats/overview?period=week|month|year - Dashboard overview
+  getOverviewStats: (period = 'month') => {
     return apiClient.get(`${API_ENDPOINTS.ADMIN_STATS_OVERVIEW}?period=${period}`);
   },
 
-  // GET /api/admin/stats/departments?period=week|month|year - Thống kê phòng ban
-  getDepartmentStats: (period = 'week') => {
+  // GET /api/admin/stats/departments?period=week|month|year - Department statistics
+  getDepartmentStats: (period = 'month') => {
     return apiClient.get(`${API_ENDPOINTS.ADMIN_STATS_DEPARTMENTS}?period=${period}`);
   },
 
-  // GET /api/admin/stats/daily?days=7|30|365 - Dữ liệu biểu đồ xu hướng
-  getDailyStats: (days = 7) => {
+  // GET /api/admin/stats/daily?days=7|30|365 - Daily trend data for charts
+  getDailyStats: (days = 30) => {
     return apiClient.get(`${API_ENDPOINTS.ADMIN_STATS_DAILY}?days=${days}`);
   },
 
-  // GET /api/admin/stats/quick - Quick metrics cho widgets
-  getQuickStats: () => {
-    return apiClient.get(API_ENDPOINTS.ADMIN_STATS_QUICK);
+  // For compatibility with saga - mapping to correct endpoints
+  getUsersByDepartment: (period = 'month') => {
+    return apiClient.get(`${API_ENDPOINTS.ADMIN_STATS_DEPARTMENTS}?period=${period}`);
+  },
+
+  getUsersByRole: (period = 'month') => {
+    return apiClient.get(`${API_ENDPOINTS.ADMIN_STATS_OVERVIEW}?period=${period}`);
   },
 };
 
