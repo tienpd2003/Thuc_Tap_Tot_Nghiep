@@ -7,6 +7,9 @@ import {
   setDepartmentStatsLoading,
   setDepartmentStatsError,
   setDepartmentStats,
+  setRoleStatsLoading,
+  setRoleStatsError,
+  setRoleStats,
   setOverviewStatsLoading,
   setOverviewStatsError,
   setOverviewStats,
@@ -58,7 +61,7 @@ function* fetchUsersByDepartmentSaga() {
 // Users by Role Saga
 function* fetchUsersByRoleSaga() {
   try {
-    yield put(setOverviewStatsLoading(true));
+    yield put(setRoleStatsLoading(true));
     const response = yield call(dashboardService.getUsersByRole);
     
     // Transform to chart format with colors
@@ -69,10 +72,31 @@ function* fetchUsersByRoleSaga() {
       color: chartColors[index % chartColors.length],
     })) || [];
     
-    yield put(setOverviewStats(transformedData));
+    // Create mock daily stats and user growth data for now
+    const mockDailyStats = [
+      { date: '2024-01-01', admin: 5, employee: 150, approver: 45 },
+      { date: '2024-01-02', admin: 5, employee: 152, approver: 46 },
+      { date: '2024-01-03', admin: 6, employee: 155, approver: 47 },
+      { date: '2024-01-04', admin: 6, employee: 158, approver: 48 },
+      { date: '2024-01-05', admin: 7, employee: 160, approver: 49 },
+    ];
+    
+    const mockUserGrowth = [
+      { month: 'Jan', users: 200 },
+      { month: 'Feb', users: 220 },
+      { month: 'Mar', users: 240 },
+      { month: 'Apr', users: 260 },
+      { month: 'May', users: 280 },
+    ];
+    
+    yield put(setRoleStats({
+      data: transformedData,
+      dailyStats: mockDailyStats,
+      userGrowth: mockUserGrowth,
+    }));
   } catch (error) {
     console.error('Dashboard Role Stats Error:', error);
-    yield put(setOverviewStatsError(error.message || 'Lỗi tải dữ liệu vai trò'));
+    yield put(setRoleStatsError(error.message || 'Lỗi tải dữ liệu vai trò'));
   }
 }
 

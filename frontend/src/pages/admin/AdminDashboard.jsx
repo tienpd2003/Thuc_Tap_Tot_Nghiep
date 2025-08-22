@@ -1,124 +1,88 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Grid,
-  Paper,
   Typography,
+  Alert,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel,
   Card,
   CardContent,
-  Avatar,
-  CircularProgress,
-  Alert,
-  Skeleton,
 } from '@mui/material';
 import {
   People as PeopleIcon,
   Business as BusinessIcon,
   Assignment as AssignmentIcon,
   CheckCircle as CheckCircleIcon,
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { fetchQuickStats, fetchUsersByDepartment, fetchUsersByRole } from '../../store/slices/dashboardSlice';
-import { CHART_COLORS } from '../../constants';
-
-// Enhanced Quick Stats Card Component
-const QuickStatsCard = ({ title, value, icon, color, isLoading, trend, trendValue }) => (
-  <Card sx={{ height: '100%', position: 'relative', overflow: 'visible' }}>
-    <CardContent>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Box sx={{ flex: 1 }}>
-          <Typography color="textSecondary" gutterBottom variant="overline" sx={{ fontSize: '0.75rem' }}>
-            {title}
-          </Typography>
-          <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', color: color, mb: 1 }}>
-            {isLoading ? (
-              <Skeleton variant="text" width={60} height={40} />
-            ) : (
-              value || 0
-            )}
-          </Typography>
-          {trend && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              {trend === 'up' ? (
-                <TrendingUpIcon sx={{ fontSize: 16, color: 'success.main' }} />
-              ) : (
-                <TrendingDownIcon sx={{ fontSize: 16, color: 'error.main' }} />
-              )}
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: trend === 'up' ? 'success.main' : 'error.main',
-                  fontWeight: 'medium'
-                }}
-              >
-                {trendValue}
-              </Typography>
-            </Box>
-          )}
-        </Box>
-        <Avatar
-          sx={{
-            backgroundColor: color,
-            width: 56,
-            height: 56,
-            position: 'absolute',
-            right: 16,
-            top: -8,
-            boxShadow: 3,
-          }}
-        >
-          {icon}
-        </Avatar>
-      </Box>
-    </CardContent>
-  </Card>
-);
+import { 
+  StatsCard, 
+  TicketTrendChart, 
+  DepartmentChart, 
+  UserGrowthChart 
+} from '../../components/charts';
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
+  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  
   const { 
     quickStats, 
     departmentStats, 
-    overviewStats,
-    loading,
-    error
+    roleStats, 
+    loading, 
+    error 
   } = useSelector((state) => state.dashboard);
 
   useEffect(() => {
-    // Fetch all dashboard data
+    // Load dashboard data on mount
     dispatch(fetchQuickStats());
-    dispatch(fetchUsersByDepartment());
-    dispatch(fetchUsersByRole());
-  }, [dispatch]);
+    dispatch(fetchUsersByDepartment(selectedPeriod));
+    dispatch(fetchUsersByRole(selectedPeriod));
+  }, [dispatch, selectedPeriod]);
 
-  // Use data from Redux store
-  const departmentChartData = departmentStats?.data || [];
-  const roleChartData = overviewStats?.data || [];
-  const hasError = error?.quickStats || error?.departmentStats || error?.overviewStats;
+  const handlePeriodChange = (event) => {
+    setSelectedPeriod(event.target.value);
+  };
 
-  // Sample trend data (will be replaced with real API data later)
-  const userTrendData = [
-    { month: 'T1', users: 15 },
-    { month: 'T2', users: 18 },
-    { month: 'T3', users: 22 },
-    { month: 'T4', users: 28 },
-    { month: 'T5', users: 32 },
-    { month: 'T6', users: quickStats?.totalUsers || 36 },
-  ];
+  const hasError = error?.quickStats || error?.departmentStats || error?.roleStats;
+
+  // Calculate efficiency percentage for display
+  const calculateEfficiency = (completed, total) => {
+    if (!total || total === 0) return 0;
+    return Math.round((completed / total) * 100);
+  };
 
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
-          Admin Dashboard
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Tổng quan hệ thống quản lý người dùng và phòng ban
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box>
+          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Admin Dashboard
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Tổng quan hệ thống quản lý người dùng và phòng ban
+          </Typography>
+        </Box>
+        
+        {/* Period Selector */}
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel>Thời gian</InputLabel>
+          <Select
+            value={selectedPeriod}
+            label="Thời gian"
+            onChange={handlePeriodChange}
+          >
+            <MenuItem value="week">Tuần này</MenuItem>
+            <MenuItem value="month">Tháng này</MenuItem>
+            <MenuItem value="year">Năm này</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
 
       {/* Error Alert */}
@@ -128,10 +92,10 @@ const AdminDashboard = () => {
         </Alert>
       )}
 
-      {/* Quick Stats */}
+      {/* Quick Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <QuickStatsCard
+          <StatsCard
             title="Tổng người dùng"
             value={quickStats?.totalUsers}
             icon={<PeopleIcon />}
@@ -139,10 +103,11 @@ const AdminDashboard = () => {
             isLoading={loading?.quickStats}
             trend="up"
             trendValue="+5.2% so với tháng trước"
+            subtitle="Hoạt động trong hệ thống"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <QuickStatsCard
+          <StatsCard
             title="Tổng phòng ban"
             value={quickStats?.totalDepartments}
             icon={<BusinessIcon />}
@@ -150,157 +115,141 @@ const AdminDashboard = () => {
             isLoading={loading?.quickStats}
             trend="up"
             trendValue="+2 phòng ban mới"
+            subtitle="Đang hoạt động"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <QuickStatsCard
-            title="Người dùng hoạt động"
-            value={quickStats?.activeUsers}
-            icon={<CheckCircleIcon />}
+          <StatsCard
+            title="Tổng tickets"
+            value={quickStats?.totalTickets}
+            icon={<AssignmentIcon />}
             color="#ed6c02"
             isLoading={loading?.quickStats}
             trend="up"
-            trendValue="87% tỷ lệ hoạt động"
+            trendValue="+15% so với tuần trước"
+            subtitle="Tất cả trạng thái"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <QuickStatsCard
-            title="Tổng vai trò"
-            value={quickStats?.totalRoles}
-            icon={<AssignmentIcon />}
+          <StatsCard
+            title="Tỷ lệ hoàn thành"
+            value={`${calculateEfficiency(quickStats?.completedTickets, quickStats?.totalTickets)}%`}
+            icon={<CheckCircleIcon />}
             color="#9c27b0"
             isLoading={loading?.quickStats}
-            trend="down"
-            trendValue="3 vai trò active"
+            trend="up"
+            trendValue="+3% hiệu quả hơn"
+            subtitle="Tickets đã xử lý"
           />
         </Grid>
       </Grid>
 
-      {/* Charts */}
+      {/* Charts Section */}
       <Grid container spacing={3}>
-        {/* Department Users Chart */}
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3, height: 400 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Số lượng người dùng theo phòng ban
-            </Typography>
-            {loading?.departmentStats ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
-                <CircularProgress />
-              </Box>
-            ) : departmentChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={departmentChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value) => [value, 'Số người dùng']}
-                    labelFormatter={(label) => `Phòng ban: ${label}`}
-                  />
-                  <Bar dataKey="users" fill={CHART_COLORS.primary} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
-                <Typography color="text.secondary">Đang tải dữ liệu phòng ban...</Typography>
-              </Box>
-            )}
-          </Paper>
+        {/* Ticket Trend Chart */}
+        <Grid item xs={12} lg={8}>
+          <TicketTrendChart
+            data={roleStats?.dailyStats}
+            loading={loading?.roleStats}
+            title="Xu hướng Ticket theo thời gian"
+          />
         </Grid>
 
-        {/* Role Distribution Chart */}
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, height: 400 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Phân bố vai trò
-            </Typography>
-            {loading?.overviewStats ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
-                <CircularProgress />
-              </Box>
-            ) : roleChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={roleChartData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {roleChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value, name) => [value, name]} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
-                <Typography color="text.secondary">Đang tải dữ liệu vai trò...</Typography>
-              </Box>
-            )}
-          </Paper>
+        {/* Department Performance */}
+        <Grid item xs={12} lg={4}>
+          <DepartmentChart
+            data={departmentStats}
+            loading={loading?.departmentStats}
+            title="Hiệu suất theo Phòng ban"
+          />
         </Grid>
 
-        {/* User Trend Chart */}
+        {/* User Growth Chart */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Xu hướng người dùng theo tháng
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={userTrendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value) => [value, 'Số người dùng']}
-                  labelFormatter={(label) => `Tháng: ${label}`}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="users" 
-                  stroke={CHART_COLORS.primary} 
-                  strokeWidth={3}
-                  dot={{ r: 6 }}
-                  activeDot={{ r: 8 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </Paper>
+          <UserGrowthChart
+            data={roleStats?.userGrowth}
+            loading={loading?.roleStats}
+            title="Tăng trưởng người dùng theo tháng"
+          />
         </Grid>
+      </Grid>
 
-        {/* Recent Activity */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Hoạt động gần đây
-            </Typography>
-            <Box sx={{ mt: 2 }}>
-              {loading?.quickStats ? (
-                <Box>
-                  <Skeleton variant="text" width="100%" height={24} />
-                  <Skeleton variant="text" width="80%" height={24} />
-                  <Skeleton variant="text" width="60%" height={24} />
-                </Box>
-              ) : (
-                <Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    📊 Dashboard statistics đã được cập nhật lúc {new Date().toLocaleTimeString('vi-VN')}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    👥 Có {quickStats?.totalUsers || 0} người dùng active trong hệ thống
-                  </Typography>
+      {/* Additional Statistics */}
+      <Grid container spacing={3} sx={{ mt: 2 }}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Thống kê nhanh
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
-                    🏢 Tổng {quickStats?.totalDepartments || 0} phòng ban đang hoạt động
+                    Admin users
+                  </Typography>
+                  <Typography variant="h6">
+                    {quickStats?.adminUsers || 0}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Active today
+                  </Typography>
+                  <Typography variant="h6">
+                    {quickStats?.activeToday || 0}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Pending tickets
+                  </Typography>
+                  <Typography variant="h6">
+                    {quickStats?.pendingTickets || 0}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Avg. resolution time
+                  </Typography>
+                  <Typography variant="h6">
+                    {quickStats?.avgResolutionTime || '0h'}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Top Performing Departments
+              </Typography>
+              {departmentStats?.data?.slice(0, 3).map((dept, index) => (
+                <Box key={dept.name} sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  py: 1,
+                  borderBottom: index < 2 ? '1px solid' : 'none',
+                  borderColor: 'divider'
+                }}>
+                  <Typography variant="body2">
+                    {dept.name}
+                  </Typography>
+                  <Typography variant="body2" color="primary">
+                    {dept.tickets || 0} tickets
                   </Typography>
                 </Box>
+              ))}
+              {(!departmentStats || departmentStats.length === 0) && (
+                <Typography variant="body2" color="text.secondary">
+                  Chưa có dữ liệu
+                </Typography>
               )}
-            </Box>
-          </Paper>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Box>

@@ -22,6 +22,14 @@ const initialState = {
     data: [],
   },
   
+  // Role-based user stats
+  roleStats: {
+    period: 'week',
+    data: [],
+    dailyStats: [],
+    userGrowth: [],
+  },
+  
   // Daily trend data for charts
   dailyStats: {
     days: 7, // 7, 30, 365
@@ -33,6 +41,7 @@ const initialState = {
     quickStats: false,
     overviewStats: false,
     departmentStats: false,
+    roleStats: false,
     dailyStats: false,
   },
   
@@ -41,6 +50,7 @@ const initialState = {
     quickStats: null,
     overviewStats: null,
     departmentStats: null,
+    roleStats: null,
     dailyStats: null,
   },
   
@@ -67,6 +77,10 @@ const dashboardSlice = createSlice({
       state.loading.departmentStats = action.payload;
     },
     
+    setRoleStatsLoading: (state, action) => {
+      state.loading.roleStats = action.payload;
+    },
+    
     setDailyStatsLoading: (state, action) => {
       state.loading.dailyStats = action.payload;
     },
@@ -87,12 +101,15 @@ const dashboardSlice = createSlice({
       state.loading.departmentStats = false;
     },
     
+    setRoleStatsError: (state, action) => {
+      state.error.roleStats = action.payload;
+      state.loading.roleStats = false;
+    },
+    
     setDailyStatsError: (state, action) => {
       state.error.dailyStats = action.payload;
       state.loading.dailyStats = false;
-    },
-
-    clearAllErrors: (state) => {
+    },    clearAllErrors: (state) => {
       state.error = initialState.error;
     },
 
@@ -114,6 +131,14 @@ const dashboardSlice = createSlice({
       state.departmentStats.data = action.payload;
       state.loading.departmentStats = false;
       state.error.departmentStats = null;
+    },
+
+    setRoleStats: (state, action) => {
+      state.roleStats.data = action.payload.data || action.payload;
+      state.roleStats.dailyStats = action.payload.dailyStats || [];
+      state.roleStats.userGrowth = action.payload.userGrowth || [];
+      state.loading.roleStats = false;
+      state.error.roleStats = null;
     },
 
     setDailyStats: (state, action) => {
@@ -145,6 +170,13 @@ const dashboardSlice = createSlice({
       state.error.departmentStats = null;
     },
 
+    resetRoleStats: (state) => {
+      state.roleStats.data = [];
+      state.roleStats.dailyStats = [];
+      state.roleStats.userGrowth = [];
+      state.error.roleStats = null;
+    },
+
     resetDailyStats: (state) => {
       state.dailyStats.data = [];
       state.error.dailyStats = null;
@@ -159,20 +191,24 @@ export const {
   setQuickStatsLoading,
   setOverviewStatsLoading,
   setDepartmentStatsLoading,
+  setRoleStatsLoading,
   setDailyStatsLoading,
   setQuickStatsError,
   setOverviewStatsError,
   setDepartmentStatsError,
+  setRoleStatsError,
   setDailyStatsError,
   clearAllErrors,
   setQuickStats,
   setOverviewStats,
   setDepartmentStats,
+  setRoleStats,
   setDailyStats,
   setSelectedPeriod,
   setSelectedDays,
   resetOverviewStats,
   resetDepartmentStats,
+  resetRoleStats,
   resetDailyStats,
   resetDashboardState,
 } = dashboardSlice.actions;
