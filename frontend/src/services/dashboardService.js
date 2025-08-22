@@ -31,6 +31,11 @@ export const dashboardService = {
   getUsersByRole: (period = 'month') => {
     return apiClient.get(`${API_ENDPOINTS.ADMIN_STATS_OVERVIEW}?period=${period}`);
   },
+
+  // Alias for getOverviewStats to maintain compatibility
+  getStatisticsByPeriod: (period = 'month') => {
+    return apiClient.get(`${API_ENDPOINTS.ADMIN_STATS_OVERVIEW}?period=${period}`);
+  },
 };
 
 export default dashboardService;

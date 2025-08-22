@@ -215,9 +215,15 @@ export const {
 
 // Action creators for sagas
 export const fetchQuickStats = () => ({ type: 'dashboard/fetchQuickStats' });
-export const fetchUsersByDepartment = () => ({ type: 'dashboard/fetchUsersByDepartment' });
-export const fetchUsersByRole = () => ({ type: 'dashboard/fetchUsersByRole' });
-export const fetchOverviewStats = (period = 'week') => ({ 
+export const fetchUsersByDepartment = (period = 'month') => ({ 
+  type: 'dashboard/fetchUsersByDepartment', 
+  payload: { period } 
+});
+export const fetchUsersByRole = (period = 'month') => ({ 
+  type: 'dashboard/fetchUsersByRole', 
+  payload: { period } 
+});
+export const fetchOverviewStats = (period = 'month') => ({ 
   type: 'dashboard/fetchOverviewStats', 
   payload: { period } 
 });
