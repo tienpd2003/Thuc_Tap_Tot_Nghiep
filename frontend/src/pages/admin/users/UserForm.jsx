@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { ROUTES, VALIDATION_MESSAGES } from '../../../constants';
 import { userService, departmentService } from '../../../services';
 import { setError, clearError } from '../../../store/slices/userSlice';
@@ -14,6 +14,7 @@ const UserForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const dispatch = useDispatch();
+  const { error } = useSelector(state => state.users);
   const isEdit = Boolean(id);
 
   // Form state
@@ -46,8 +47,8 @@ const UserForm = () => {
         setFormData({
           ...response.data,
           password: '', // Don't load password for security
-          departmentId: response.data.departmentId || '',
-          roleId: response.data.roleId || ''
+          departmentId: response.data.departmentId ? response.data.departmentId.toString() : '',
+          roleId: response.data.roleId ? response.data.roleId.toString() : ''
         });
       }
     } catch (err) {
@@ -91,12 +92,22 @@ const UserForm = () => {
 
   const handleInputChange = (field) => (event) => {
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
-    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // For select fields (department/role), ensure we store the value correctly
+    let finalValue = value;
+    if (field === 'departmentId' || field === 'roleId') {
+      finalValue = value === '' ? '' : value; // Keep as string for form, will convert to number on submit
+    }
+    
+    setFormData(prev => ({ ...prev, [field]: finalValue }));
     
     // Clear field error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
+    
+    // Clear general error message when user makes changes
+    dispatch(clearError());
   };
 
   const validateForm = () => {
@@ -160,14 +171,20 @@ const UserForm = () => {
       // Prepare data for submission
       const submitData = { ...formData };
       
-      // Convert string IDs to numbers
-      submitData.departmentId = parseInt(submitData.departmentId);
-      submitData.roleId = parseInt(submitData.roleId);
+      // Convert string IDs to numbers for backend
+      if (submitData.departmentId) {
+        submitData.departmentId = parseInt(submitData.departmentId);
+      }
+      if (submitData.roleId) {
+        submitData.roleId = parseInt(submitData.roleId);
+      }
       
       // For edit mode, don't send password if it's empty
       if (isEdit && !submitData.password) {
         delete submitData.password;
       }
+
+      console.log('Submitting data:', submitData); // Debug log
 
       if (isEdit) {
         await userService.updateUser(id, submitData);
@@ -194,7 +211,24 @@ const UserForm = () => {
         setErrors(backendErrors);
       } else if (err.response?.status === 409) {
         // Conflict error (duplicate email, username, etc.)
-        dispatch(setError(err.response.data?.message || 'Dữ liệu bị trùng lặp (email hoặc mã nhân viên).'));
+        const errorMessage = err.response.data?.message;
+        if (errorMessage) {
+          if (errorMessage.includes('employee code') || errorMessage.includes('employeeCode')) {
+            setErrors(prev => ({ ...prev, employeeCode: 'Mã nhân viên đã tồn tại trong hệ thống' }));
+          } else if (errorMessage.includes('username')) {
+            setErrors(prev => ({ ...prev, username: 'Tên đăng nhập đã tồn tại trong hệ thống' }));
+          } else if (errorMessage.includes('email')) {
+            setErrors(prev => ({ ...prev, email: 'Email đã tồn tại trong hệ thống' }));
+          } else {
+            dispatch(setError(errorMessage));
+          }
+        } else {
+          dispatch(setError('Dữ liệu bị trùng lặp (email, mã nhân viên hoặc tên đăng nhập).'));
+        }
+      } else if (err.response?.status === 400) {
+        // General validation error
+        const errorMessage = err.response.data?.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.';
+        dispatch(setError(errorMessage));
       } else {
         dispatch(setError('Có lỗi xảy ra khi lưu thông tin người dùng. Vui lòng thử lại.'));
       }
@@ -236,6 +270,13 @@ const UserForm = () => {
       {successMessage && (
         <Alert severity="success" sx={{ mb: 3 }}>
           {successMessage}
+        </Alert>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => dispatch(clearError())}>
+          {error}
         </Alert>
       )}
 

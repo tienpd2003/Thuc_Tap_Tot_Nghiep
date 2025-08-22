@@ -1,5 +1,6 @@
 package com.example.thuc_tap.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -43,6 +44,29 @@ public class GlobalExceptionHandler {
         );
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        String message = "Data integrity violation";
+        String rootCause = ex.getMostSpecificCause().getMessage().toLowerCase();
+        
+        if (rootCause.contains("employee_code") && rootCause.contains("duplicate")) {
+            message = "Mã nhân viên đã tồn tại trong hệ thống";
+        } else if (rootCause.contains("username") && rootCause.contains("duplicate")) {
+            message = "Tên đăng nhập đã tồn tại trong hệ thống";
+        } else if (rootCause.contains("email") && rootCause.contains("duplicate")) {
+            message = "Email đã tồn tại trong hệ thống";
+        } else if (rootCause.contains("duplicate") || rootCause.contains("unique")) {
+            message = "Dữ liệu đã tồn tại trong hệ thống";
+        }
+        
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                message,
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

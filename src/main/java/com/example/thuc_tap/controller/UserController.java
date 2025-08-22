@@ -2,9 +2,11 @@ package com.example.thuc_tap.controller;
 
 import com.example.thuc_tap.dto.UserDto;
 import com.example.thuc_tap.service.UserService;
+import com.example.thuc_tap.validation.ValidationGroups;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,13 +34,13 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) {
+    public ResponseEntity<UserDto> createUser(@Validated(ValidationGroups.CreateUser.class) @RequestBody UserDto userDto) {
         UserDto createdUser = userService.createUser(userDto);
         return ResponseEntity.ok(createdUser);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @Valid @RequestBody UserDto userDto) {
+    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @Validated(ValidationGroups.UpdateUser.class) @RequestBody UserDto userDto) {
         Optional<UserDto> updatedUser = userService.updateUser(id, userDto);
         return updatedUser.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
