@@ -1,5 +1,6 @@
 package com.example.thuc_tap.dto.response;
 
+import com.example.thuc_tap.common.FormSchema;
 import com.example.thuc_tap.dto.ApprovalWorkflowDto;
 import com.example.thuc_tap.dto.FormFieldDto;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,7 @@ public class FormTemplateResponse {
     private String createdAt;
     private String updatedAt;
     private List<FormFieldDto> formFields;
+    private FormSchema formSchema;
     private List<ApprovalWorkflowDto> approvalWorkflows;
 
 }

@@ -1,11 +1,14 @@
 package com.example.thuc_tap.entity;
 
+import com.example.thuc_tap.common.FormSchema;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,8 +46,12 @@ public class FormTemplate {
     private LocalDateTime updatedAt;
     
     // Relationships
-    @OneToMany(mappedBy = "formTemplate", cascade = CascadeType.ALL)
-    private List<FormField> formFields;
+//    @OneToMany(mappedBy = "formTemplate", cascade = CascadeType.ALL)
+//    private List<FormField> formFields;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "form_schema", columnDefinition = "jsonb")
+    private FormSchema formSchema;
     
     @OneToMany(mappedBy = "formTemplate", cascade = CascadeType.ALL)
     private List<ApprovalWorkflow> approvalWorkflows;

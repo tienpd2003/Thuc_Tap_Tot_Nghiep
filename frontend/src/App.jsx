@@ -3,14 +3,16 @@ import { RouterProvider } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
-import { router } from './router/index.jsx';
+import { router } from './routes/index.jsx';
 import { store } from './store';
 
 // Create Material-UI theme
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#5e83ae', // Using the same color as CSS variable --primary-color
+      dark: '#4a6b8a', // Using the same color as CSS variable --primary-dark
+      light: '#7a9bc4', // Using the same color as CSS variable --primary-light
     },
     secondary: {
       main: '#dc004e',
@@ -20,7 +22,7 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
     h4: {
       fontWeight: 600,
     },
@@ -29,6 +31,13 @@ const theme = createTheme({
     },
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {

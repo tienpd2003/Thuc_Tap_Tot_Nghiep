@@ -80,30 +80,31 @@ public class FormTemplateService {
             .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getCreatedById()));
 
         formTemplate.setCreatedBy(createdBy);
+        formTemplate.setFormSchema(request.getFormSchema());
 
         // Handle form fields and approval workflows
-        List<FormField> formFields = request.getFormFields().stream()
-            .map(fieldDto -> {
-                FormField formField = new FormField();
-                formField.setFieldName(fieldDto.getFieldName());
-                formField.setFieldLabel(fieldDto.getFieldLabel());
-
-                FieldType fieldType = fieldTypeRepository.findById(fieldDto.getFieldTypeId())
-                        .orElseThrow(() -> new RuntimeException("FieldType not found: " + fieldDto.getFieldTypeId()));
-                formField.setFieldType(fieldType);
-                formField.setIsRequired(fieldDto.getIsRequired());
-                formField.setFieldOrder(fieldDto.getFieldOrder());
-                formField.setReadOnly(fieldDto.getReadOnly());
-
-                formField.setFieldOptions(fieldDto.getFieldOptions());
-
-                formField.setValidationRules(fieldDto.getValidationRules());
-                formField.setFormTemplate(formTemplate);
-
-                return formField;
-            })
-            .collect(Collectors.toList());
-        formTemplate.setFormFields(formFields);
+//        List<FormField> formFields = request.getFormFields().stream()
+//            .map(fieldDto -> {
+//                FormField formField = new FormField();
+//                formField.setFieldName(fieldDto.getFieldName());
+//                formField.setFieldLabel(fieldDto.getFieldLabel());
+//
+//                FieldType fieldType = fieldTypeRepository.findById(fieldDto.getFieldTypeId())
+//                        .orElseThrow(() -> new RuntimeException("FieldType not found: " + fieldDto.getFieldTypeId()));
+//                formField.setFieldType(fieldType);
+//                formField.setIsRequired(fieldDto.getIsRequired());
+//                formField.setFieldOrder(fieldDto.getFieldOrder());
+//                formField.setReadOnly(fieldDto.getReadOnly());
+//
+//                formField.setFieldOptions(fieldDto.getFieldOptions());
+//
+//                formField.setValidationRules(fieldDto.getValidationRules());
+//                formField.setFormTemplate(formTemplate);
+//
+//                return formField;
+//            })
+//            .collect(Collectors.toList());
+//        formTemplate.setFormFields(formFields);
 
         List<ApprovalWorkflow> approvalWorkflows = request.getApprovalWorkflows().stream()
             .map(workflowDto -> {

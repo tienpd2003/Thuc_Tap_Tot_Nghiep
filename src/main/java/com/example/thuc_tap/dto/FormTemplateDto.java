@@ -1,5 +1,6 @@
 package com.example.thuc_tap.dto;
 
+import com.example.thuc_tap.common.FormSchema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,7 +20,8 @@ public class FormTemplateDto {
     private String createdByName;
     private String createdAt;
     private String updatedAt;
-    private List<FormFieldDto> formFields;
+//    private List<FormFieldDto> formFields;
+    private FormSchema formSchema;
     private List<ApprovalWorkflowDto> approvalWorkflows;
 
 }

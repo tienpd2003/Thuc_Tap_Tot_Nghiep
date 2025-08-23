@@ -1,5 +1,6 @@
 package com.example.thuc_tap.dto.request;
 
+import com.example.thuc_tap.common.FormSchema;
 import com.example.thuc_tap.dto.ApprovalWorkflowDto;
 import com.example.thuc_tap.dto.FormFieldDto;
 import jakarta.validation.Valid;
@@ -25,9 +26,11 @@ public class CreateFormTemplateRequest {
     @NotNull(message = "Created by user ID is required")
     private Long createdById;
     
-    @NotEmpty(message = "Form fields are required")
-    @Valid
-    private List<FormFieldDto> formFields;
+//    @NotEmpty(message = "Form fields are required")
+//    @Valid
+//    private List<FormFieldDto> formFields;
+
+    private FormSchema formSchema;
     
     @NotEmpty(message = "Approval workflows are required")
     @Valid
