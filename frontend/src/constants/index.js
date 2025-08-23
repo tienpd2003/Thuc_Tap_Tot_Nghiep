@@ -39,6 +39,11 @@ export const ROUTES = {
       CREATE: '/admin/departments/new',
       EDIT: (id) => `/admin/departments/${id}/edit`,
     },
+    FORM_TEMPLATES: {
+      LIST: '/admin/form-templates',
+      CREATE: '/admin/form-templates/new',
+      EDIT: (id) => `/admin/form-templates/${id}`,
+    },
     REPORTS: '/admin/reports',
     SETTINGS: '/admin/settings',
   },

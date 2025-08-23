@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Drawer,
   Box,
   List,
   ListItem,
@@ -18,11 +17,12 @@ import {
   Business as BusinessIcon,
   Settings as SettingsIcon,
   BarChart as BarChartIcon,
+  Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ROUTES } from '../../constants';
+import { ROUTES } from '../constants';
 
-const AdminSidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
+const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -45,6 +45,12 @@ const AdminSidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
       icon: <BusinessIcon />,
       path: ROUTES.ADMIN.DEPARTMENTS.LIST,
       description: 'Quản lý phòng ban'
+    },
+    {
+      text: 'Form Template Management',
+      icon: <DescriptionIcon />,
+      path: ROUTES.ADMIN.FORM_TEMPLATES.LIST,
+      description: 'Quản lý mẫu form'
     },
   ];
 
@@ -74,51 +80,16 @@ const AdminSidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-  const DrawerContent = () => (
+  const SidebarContent = () => (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Admin Profile Section */}
-      <Box sx={{ p: 2 }}>
-        <Paper
-          elevation={1}
-          sx={{
-            p: 2,
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: '#f8f9fa',
-            borderRadius: 2,
-          }}
-        >
-          <Avatar
-            sx={{
-              width: 48,
-              height: 48,
-              bgcolor: 'primary.main',
-              mr: 2,
-            }}
-          >
-            A
-          </Avatar>
-          <Box>
-            <Typography variant="subtitle1" fontWeight="bold">
-              Admin User
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              System Administrator
-            </Typography>
-          </Box>
-        </Paper>
-      </Box>
-
-      <Divider />
-
       {/* Main Admin Functions */}
-      <Box sx={{ px: 2, py: 1 }}>
+      <Box sx={{ px: 2, pt: 2 }}>
         <Typography
           variant="overline"
           sx={{
             color: 'text.secondary',
             fontWeight: 'bold',
-            px: 2,
+            px: 3,
             fontSize: '0.75rem',
           }}
         >
@@ -231,47 +202,64 @@ const AdminSidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
   return (
     <Box
       component="nav"
-      sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+      sx={{ 
+        width: { sm: drawerWidth }, 
+        flexShrink: { sm: 0 },
+        height: '100%',
+        backgroundColor: '#fafafa',
+        borderRight: '1px solid #e0e0e0',
+      }}
       aria-label="admin navigation"
     >
-      {/* Mobile Drawer */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={onDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Better open performance on mobile.
-        }}
+      {/* Mobile - Overlay */}
+      <Box
         sx={{
           display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: drawerWidth,
-            borderRight: '1px solid #e0e0e0',
-          },
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1200,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          visibility: mobileOpen ? 'visible' : 'hidden',
+          opacity: mobileOpen ? 1 : 0,
+          transition: 'visibility 0s, opacity 0.3s',
+        }}
+        onClick={onDrawerToggle}
+      />
+      
+      {/* Mobile - Sidebar */}
+      <Box
+        sx={{
+          display: { xs: 'block', sm: 'none' },
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: drawerWidth,
+          height: '100vh',
+          zIndex: 1201,
+          backgroundColor: '#fafafa',
+          borderRight: '1px solid #e0e0e0',
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s ease-in-out',
         }}
       >
-        <DrawerContent />
-      </Drawer>
+        <SidebarContent />
+      </Box>
 
-      {/* Desktop Drawer */}
-      <Drawer
-        variant="permanent"
+      {/* Desktop - Always visible */}
+      <Box
         sx={{
           display: { xs: 'none', sm: 'block' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: drawerWidth,
-            borderRight: '1px solid #e0e0e0',
-            backgroundColor: '#fafafa',
-          },
+          width: drawerWidth,
+          height: '100%',
         }}
-        open
       >
-        <DrawerContent />
-      </Drawer>
+        <SidebarContent />
+      </Box>
     </Box>
   );
 };
 
-export default AdminSidebar;
+export default Sidebar;
