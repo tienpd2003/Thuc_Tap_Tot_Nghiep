@@ -14,6 +14,7 @@ public class UserMapper {
         dto.setId(user.getId());
         dto.setEmployeeCode(user.getEmployeeCode());
         dto.setUsername(user.getUsername());
+        dto.setPassword(user.getPassword()); // Include password for authentication
         dto.setFullName(user.getFullName());
         dto.setEmail(user.getEmail());
         dto.setPhone(user.getPhone());

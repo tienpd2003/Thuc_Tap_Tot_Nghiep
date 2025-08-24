@@ -1,19 +1,24 @@
 import { Outlet } from "react-router-dom";
 import Header from "../components/Header";
-import Footer from "../components/Footer";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function ApproverLayout() {
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <div className="flex flex-col h-screen">
-      <Header role="approver" />
+      <Header 
+        role="approver" 
+        user={user}
+        onLogout={handleLogout}
+      />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto bg-gray-50">
-          <div className="container mx-auto px-8 py-8 max-w-7xl">
-            <Outlet />
-          </div>
-          <Footer />
-        </main>
+      <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <Outlet />
       </div>
     </div>
   );
