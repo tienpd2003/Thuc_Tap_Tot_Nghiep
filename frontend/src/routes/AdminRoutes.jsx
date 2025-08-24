@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import ProtectedRoute from '../components/ProtectedRoute';
 import AdminLayout from '../layouts/AdminLayout';
 import { ROUTES } from '../constants';
 
@@ -17,7 +18,11 @@ import CreateFormTemplate from '../features/form-templates/CreateFormTemplate';
 const AdminRoutes = [
   {
     path: '/admin',
-    element: <AdminLayout />,
+    element: (
+      <ProtectedRoute requiredRoles={['ADMIN']}>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,

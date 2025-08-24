@@ -242,7 +242,7 @@ const FormBuilder = ({ templateId }) => {
 
   const addFieldFromToolbox = (type) => {
     const newField = {
-      key: `${type}_${Date.now()}`,
+      key: `${Date.now()}`,
       label: `${type.charAt(0).toUpperCase() + type.slice(1)} Field`,
       type,
       validation: {},
@@ -442,12 +442,12 @@ const FormBuilder = ({ templateId }) => {
               <div className="flex gap-4 p-4">
                 <div className="flex flex-col">
                   <label htmlFor="templateName" className="mb-1 font-semibold">
-                    Template Name<span className="text-red-500 ml-1">*</span>
+                    Tên Form<span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
                     id="templateName"
                     type="text"
-                    placeholder="Template Name"
+                    placeholder="Nhập tên form"
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
                     disabled={isPreviewMode}
@@ -457,12 +457,12 @@ const FormBuilder = ({ templateId }) => {
 
                 <div className="flex flex-col flex-1">
                   <label htmlFor="templateDescription" className="mb-1 font-semibold">
-                    Template Description<span className="text-red-500 ml-1">*</span>
+                    Mô tả<span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
                     id="templateDescription"
                     type="text"
-                    placeholder="Template Description"
+                    placeholder="Mô tả mục đích, đối tượng, các trường hợp sử dụng form"
                     value={templateDescription}
                     onChange={(e) => setTemplateDescription(e.target.value)}
                     disabled={isPreviewMode}
@@ -515,6 +515,7 @@ const FormBuilder = ({ templateId }) => {
                   console.log('FieldConfigPanel onCancel called');
                   setEditingFieldIndex(null);
                 }}
+                existingFields={formSchema.fields}
               />
             ) : (
               <Toolbox onAddField={addFieldFromToolbox} />
@@ -529,7 +530,7 @@ const FormBuilder = ({ templateId }) => {
                 departments={departments}
               />
             ) : (
-              <div className="w-64 bg-gray-50 p-4 border-l border-gray-200 h-full overflow-y-auto">
+              <div className="w-80 bg-gray-50 p-4 border-l border-gray-200 h-full overflow-y-auto">
                 <h3 className="font-semibold text-gray-800 mb-4">Workflow Tools</h3>
                 <p className="text-sm text-gray-600">
                   Click on a workflow step to edit its properties, or use the "Add Workflow Step" button to create new steps.

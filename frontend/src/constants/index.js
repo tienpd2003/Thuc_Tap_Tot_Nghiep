@@ -1,8 +1,18 @@
 // API Base URL
 export const API_BASE_URL = 'http://localhost:8080/api';
 
-// Admin API Endpoints (MyJob scope only)
+// Authentication API Endpoints
+export const AUTH_ENDPOINTS = {
+  LOGIN: '/auth/login',
+  LOGOUT: '/auth/logout',
+  RESET_PASSWORD: '/auth/reset-password',
+};
+
+// API Endpoints
 export const API_ENDPOINTS = {
+  // Authentication
+  ...AUTH_ENDPOINTS,
+  
   // User Management (7 APIs)
   USERS: '/users',
   USERS_SEARCH: '/users/search',
@@ -23,6 +33,20 @@ export const API_ENDPOINTS = {
   ADMIN_STATS_DEPARTMENTS: '/admin/stats/departments',
   ADMIN_STATS_DAILY: '/admin/stats/daily',
   ADMIN_STATS_QUICK: '/admin/stats/quick',
+  
+  // Employee APIs
+  EMPLOYEE_DASHBOARD: (employeeId) => `/employee/${employeeId}/dashboard`,
+  EMPLOYEE_TICKETS: (employeeId) => `/employee/${employeeId}/tickets`,
+  EMPLOYEE_TICKETS_BY_STATUS: (employeeId, status) => `/employee/${employeeId}/tickets/status/${status}`,
+  EMPLOYEE_TICKETS_SEARCH: (employeeId) => `/employee/${employeeId}/tickets/search`,
+  EMPLOYEE_TICKETS_DATE_RANGE: (employeeId) => `/employee/${employeeId}/tickets/dateRange`,
+  
+  // Ticket APIs
+  TICKETS: '/tickets',
+  TICKET_BY_ID: (ticketId) => `/tickets/${ticketId}`,
+  TICKET_UPDATE: (ticketId, employeeId) => `/tickets/${ticketId}/employee/${employeeId}`,
+  TICKET_DELETE: (ticketId, employeeId) => `/tickets/${ticketId}/employee/${employeeId}`,
+  TICKET_FORM_DATA: (ticketId) => `/tickets/${ticketId}/form-data`,
 };
 
 // Admin Navigation Routes
