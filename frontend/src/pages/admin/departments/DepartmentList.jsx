@@ -75,7 +75,7 @@ const DepartmentList = () => {
     data: null
   });
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showFilters, setShowFilters] = useState(false);
+  // const [showFilters, setShowFilters] = useState(false);
 
   // Fetch departments
   const fetchDepartments = useCallback(async () => {
@@ -97,8 +97,8 @@ const DepartmentList = () => {
   const filteredDepartments = departments.filter(dept => {
     const matchesSearch = searchQuery === '' || 
       dept.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dept.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dept.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      dept.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      dept.departmentHeadName?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' ||
       (statusFilter === 'active' && dept.isActive) ||
@@ -150,15 +150,14 @@ const DepartmentList = () => {
   const exportToCSV = (exportType) => {
     const dataToExport = exportType === 'current' ? paginatedDepartments : filteredDepartments;
     
-    const headers = ['STT', 'Mã phòng ban', 'Tên phòng ban', 'Mô tả', 'Trưởng phòng', 'Số nhân viên', 'Trạng thái'];
+    const headers = ['STT', 'Tên phòng ban', 'Mô tả', 'Trưởng phòng', 'Số nhân viên', 'Trạng thái'];
     const csvContent = [
       '\uFEFF' + headers.join(','), // UTF-8 BOM for Vietnamese characters
       ...dataToExport.map((dept, index) => [
         exportType === 'current' ? pagination.page * pagination.pageSize + index + 1 : index + 1,
-        `"${dept.code || ''}"`,
         `"${dept.name || ''}"`,
         `"${dept.description || ''}"`,
-        `"${dept.managerName || 'Chưa có'}"`,
+        `"${dept.departmentHeadName || 'Chưa có'}"`,
         dept.userCount || 0,
         dept.isActive ? 'Hoạt động' : 'Ngưng hoạt động'
       ].join(','))
@@ -198,7 +197,6 @@ const DepartmentList = () => {
             <thead>
               <tr>
                 <th>STT</th>
-                <th>Mã phòng ban</th>
                 <th>Tên phòng ban</th>
                 <th>Mô tả</th>
                 <th>Trưởng phòng</th>
@@ -210,10 +208,9 @@ const DepartmentList = () => {
               ${dataToExport.map((dept, index) => `
                 <tr>
                   <td>${exportType === 'current' ? pagination.page * pagination.pageSize + index + 1 : index + 1}</td>
-                  <td>${dept.code || ''}</td>
                   <td>${dept.name || ''}</td>
                   <td>${dept.description || ''}</td>
-                  <td>${dept.managerName || 'Chưa có'}</td>
+                  <td>${dept.departmentHeadName || 'Chưa có'}</td>
                   <td>${dept.userCount || 0}</td>
                   <td class="status-${dept.isActive ? 'active' : 'inactive'}">
                     ${dept.isActive ? 'Hoạt động' : 'Ngưng hoạt động'}
@@ -404,7 +401,7 @@ const DepartmentList = () => {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              placeholder="Tìm kiếm theo tên, mã phòng ban, mô tả..."
+              placeholder="Tìm kiếm theo tên phòng ban, mô tả, trưởng phòng..."
               value={searchQuery}
               onChange={handleSearchChange}
               InputProps={{
@@ -429,7 +426,7 @@ const DepartmentList = () => {
               <MenuItem value="inactive">Ngưng hoạt động</MenuItem>
             </TextField>
           </Grid>
-          <Grid item xs={12} md={3}>
+          {/* <Grid item xs={12} md={3}>
             <Button
               variant="outlined"
               startIcon={<FilterIcon />}
@@ -438,11 +435,11 @@ const DepartmentList = () => {
             >
               Bộ lọc
             </Button>
-          </Grid>
+          </Grid> */}
         </Grid>
 
         {/* Advanced Filters */}
-        <Collapse in={showFilters}>
+        {/* <Collapse in={showFilters}>
           <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
               Bộ lọc nâng cao
@@ -465,7 +462,7 @@ const DepartmentList = () => {
               </Grid>
             </Grid>
           </Box>
-        </Collapse>
+        </Collapse> */}
       </Paper>
 
       {/* Bulk Actions Toolbar */}
@@ -517,7 +514,6 @@ const DepartmentList = () => {
                   />
                 </TableCell>
                 <TableCell>STT</TableCell>
-                <TableCell>Mã phòng ban</TableCell>
                 <TableCell>Tên phòng ban</TableCell>
                 <TableCell>Mô tả</TableCell>
                 <TableCell>Trưởng phòng</TableCell>
@@ -539,11 +535,6 @@ const DepartmentList = () => {
                     {pagination.page * pagination.pageSize + index + 1}
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2" fontWeight="medium">
-                      {department.code}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
                     <Box>
                       <Typography variant="body2" fontWeight="medium">
                         {department.name}
@@ -556,9 +547,20 @@ const DepartmentList = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2">
-                      {department.managerName || 'Chưa có'}
-                    </Typography>
+                    {department.departmentHeadName ? (
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">
+                          {department.departmentHeadName}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {department.departmentHeadEmployeeCode}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Chưa có
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

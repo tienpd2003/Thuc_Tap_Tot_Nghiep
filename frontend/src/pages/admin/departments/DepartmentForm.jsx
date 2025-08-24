@@ -41,10 +41,8 @@ const DepartmentForm = () => {
   // Form state
   const [formData, setFormData] = useState({
     name: '',
-    code: '',
     description: '',
-    managerId: null,
-    maxEmployees: '',
+    departmentHeadId: null,
     active: true
   });
 
@@ -58,6 +56,7 @@ const DepartmentForm = () => {
       try {
         setLoadingUsers(true);
         const response = await userService.getAllUsers();
+        console.log('All users loaded:', response.data);
         setUsers(response.data || []);
       } catch (error) {
         console.error('Error loading users:', error);
@@ -80,10 +79,8 @@ const DepartmentForm = () => {
           
           setFormData({
             name: department.name || '',
-            code: department.code || '',
             description: department.description || '',
-            managerId: department.managerId || department.manager?.id || null,
-            maxEmployees: department.maxEmployees || department.maxUsers || '',
+            departmentHeadId: department.departmentHeadId || null,
             active: department.isActive !== false // Backend uses 'isActive', frontend uses 'active'
           });
           
@@ -127,16 +124,6 @@ const DepartmentForm = () => {
       errors.name = 'Tên phòng ban là bắt buộc';
     }
 
-    if (!formData.code.trim()) {
-      errors.code = 'Mã phòng ban là bắt buộc';
-    } else if (!/^[A-Z0-9_]+$/.test(formData.code)) {
-      errors.code = 'Mã phòng ban chỉ được chứa chữ in hoa, số và dấu gạch dưới';
-    }
-
-    if (formData.maxEmployees && formData.maxEmployees < 1) {
-      errors.maxEmployees = 'Số lượng nhân viên tối đa phải lớn hơn 0';
-    }
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -155,10 +142,8 @@ const DepartmentForm = () => {
 
       const departmentData = {
         name: formData.name.trim(),
-        code: formData.code.trim().toUpperCase(),
         description: formData.description.trim(),
-        managerId: formData.managerId,
-        maxEmployees: formData.maxEmployees ? parseInt(formData.maxEmployees) : null,
+        departmentHeadId: formData.departmentHeadId,
         isActive: formData.active // Backend expects 'isActive', frontend uses 'active'
       };
 
@@ -191,14 +176,21 @@ const DepartmentForm = () => {
     }
   };
 
-  // Get manager options (exclude current manager if editing)
-  const availableManagers = users.filter(user => 
-    user.active && 
-    (!isEdit || user.id !== selectedDepartment?.managerId) &&
-    user.role !== 'ADMIN' // Assuming admins shouldn't be department managers
-  );
+  // Get department head options (only APPROVER role users)
+  const availableManagers = users.filter(user => {
+    const isActive = user.active || user.isActive;
+    // Temporarily remove role filter to debug
+    // const isApprover = user.roleName === 'APPROVER';
+    const isNotCurrentHead = !isEdit || user.id !== selectedDepartment?.departmentHeadId;
+    
+    console.log(`User ${user.fullName}: active=${isActive}, roleName=${user.roleName}, isNotCurrentHead=${isNotCurrentHead}`);
+    
+    return isActive && isNotCurrentHead; // Removed role filter temporarily
+  });
+  
+  console.log('Available managers after filtering:', availableManagers);
 
-  const selectedManager = users.find(user => user.id === formData.managerId);
+  const selectedManager = users.find(user => user.id === formData.departmentHeadId);
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
@@ -251,7 +243,7 @@ const DepartmentForm = () => {
               Thông tin cơ bản
             </Typography>
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   label="Tên phòng ban *"
@@ -262,24 +254,6 @@ const DepartmentForm = () => {
                   helperText={formErrors.name}
                   disabled={loading}
                   required
-                  sx={{ '& .MuiInputBase-root': { height: 56 } }}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Mã phòng ban *"
-                  placeholder="VD: IT, HR, FINANCE"
-                  value={formData.code}
-                  onChange={(e) => handleInputChange('code', e.target.value.toUpperCase())}
-                  error={Boolean(formErrors.code)}
-                  helperText={formErrors.code || 'Chỉ được chứa chữ in hoa, số và dấu gạch dưới'}
-                  disabled={loading || (isEdit && selectedDepartment?.code)}
-                  required
-                  InputProps={{
-                    style: { textTransform: 'uppercase' }
-                  }}
                   sx={{ '& .MuiInputBase-root': { height: 56 } }}
                 />
               </Grid>
@@ -297,25 +271,7 @@ const DepartmentForm = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Số lượng nhân viên tối đa"
-                  placeholder="Nhập số lượng (để trống nếu không giới hạn)"
-                  value={formData.maxEmployees}
-                  onChange={(e) => handleInputChange('maxEmployees', e.target.value)}
-                  type="number"
-                  error={Boolean(formErrors.maxEmployees)}
-                  helperText={formErrors.maxEmployees || 'Để trống nếu không giới hạn số lượng'}
-                  disabled={loading}
-                  InputProps={{
-                    inputProps: { min: 1 }
-                  }}
-                  sx={{ '& .MuiInputBase-root': { height: 56 } }}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -325,18 +281,7 @@ const DepartmentForm = () => {
                       color="primary"
                     />
                   }
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body1">
-                        Trạng thái hoạt động
-                      </Typography>
-                      <Chip
-                        label={formData.active ? 'Hoạt động' : 'Ngưng hoạt động'}
-                        color={formData.active ? 'success' : 'default'}
-                        size="small"
-                      />
-                    </Box>
-                  }
+                  label="Phòng ban đang hoạt động"
                   sx={{ mt: 2 }}
                 />
               </Grid>
@@ -362,7 +307,7 @@ const DepartmentForm = () => {
                   options={availableManagers}
                   getOptionLabel={(option) => `${option.fullName} (${option.employeeCode})`}
                   value={selectedManager || null}
-                  onChange={(event, newValue) => handleInputChange('managerId', newValue?.id || null)}
+                  onChange={(event, newValue) => handleInputChange('departmentHeadId', newValue?.id || null)}
                   disabled={loading || loadingUsers}
                   loading={loadingUsers}
                   renderInput={(params) => (
@@ -370,7 +315,7 @@ const DepartmentForm = () => {
                       {...params}
                       label="Trưởng phòng"
                       placeholder="Chọn trưởng phòng"
-                      helperText="Có thể để trống, sẽ chỉ định sau"
+                      helperText="Chỉ người dùng có vai trò 'APPROVER' mới có thể làm trưởng phòng"
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (
@@ -395,7 +340,7 @@ const DepartmentForm = () => {
                       </Box>
                     </Box>
                   )}
-                  noOptionsText="Không tìm thấy nhân viên phù hợp"
+                  noOptionsText="Không có người dùng nào có vai trò 'APPROVER' để chọn làm trưởng phòng"
                 />
               </Grid>
             </Grid>
@@ -443,7 +388,7 @@ const DepartmentForm = () => {
                       Trưởng phòng hiện tại:
                     </Typography>
                     <Typography variant="body1" fontWeight="medium">
-                      {selectedDepartment.managerName || 'Chưa có'}
+                      {selectedDepartment.departmentHeadName || 'Chưa có'}
                     </Typography>
                   </Box>
                 </Grid>
