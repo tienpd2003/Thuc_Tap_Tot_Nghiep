@@ -37,7 +37,7 @@ const WorkflowConfigPanel = ({ step, onSave, onCancel, departments = [] }) => {
   const selectedDept = departments.find(d => d.id === config.departmentId);
 
   return (
-    <div className="w-64 bg-gray-50 p-4 border-l border-gray-200 h-full overflow-y-auto">
+    <div className="w-80 bg-gray-50 p-4 border-l border-gray-200 h-full overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-800">Workflow Step</h3>
         <div className="flex">

@@ -2,8 +2,16 @@ import { closestCenter, DndContext, KeyboardSensor, PointerSensor, TouchSensor, 
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import SortableFormField from "./SortableFormField";
 import { MdAdd } from "react-icons/md";
+import { useEffect, useRef } from "react";
 
 const FormCanvas = ({ formSchema, setFormSchema, isPreviewMode, onEditField, formData, onFieldChange, addFieldFromToolbox }) => {
+
+  const endRef = useRef(null);
+
+  useEffect(() => {
+    // Mỗi lần fields thay đổi thì scroll xuống cuối
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [formSchema.fields.length]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -75,7 +83,7 @@ const FormCanvas = ({ formSchema, setFormSchema, isPreviewMode, onEditField, for
           <div
             className={`grid gap-4 mt-4 overflow-y-auto transition-all min-h-[120px] w-full ${isPreviewMode
                 ? 'gap-6'
-                : 'p-4 border-2 border-dashed border-gray-300 rounded-xl'
+                : 'px-4 pt-4 border-2 border-dashed border-gray-300 rounded-xl'
               }`}
             style={{
               ...formSchema.layout,
@@ -104,6 +112,7 @@ const FormCanvas = ({ formSchema, setFormSchema, isPreviewMode, onEditField, for
                 />
               ))
             )}
+            <div ref={endRef} className=""/>
           </div>
         </SortableContext>
       </DndContext>

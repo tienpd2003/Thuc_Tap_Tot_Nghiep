@@ -12,13 +12,13 @@ public class FormSchema {
 
     private Integer version;
     private List<FieldSchema> fields;
-    private Map<String, Object> layout;
-    private Map<String, Object> permissions;
+//    private Map<String, Object> layout;
+//    private Map<String, Object> permissions;
 
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class FieldSchema {
-        private Long id; // optional DB ref
+//        private Long id; // optional DB ref
         private String key; // required
         private Object label; // string or i18n map
         private String type; // text, number, dropdown, repeater...
@@ -49,8 +49,15 @@ public class FormSchema {
         private Integer colSpan;
         private String component;
         private Integer rows;
-        private Map<String,Object> asyncOptions;
-        private Map<String,Object> file;
+        private AsyncOptionsConfig asyncOptions; // for dynamic options
+//        private Map<String,Object> file;
+    }
+
+    @Data
+    public static class AsyncOptionsConfig {
+        private String endpoint;
+        private String method = "GET";
+        private String dataPath; // eg: API trả về { "data": { "items": [...] } }, thì dataPath = "data.items"
     }
 
     @Data
