@@ -4,20 +4,20 @@ import { API_BASE_URL } from '../constants';
 // Create axios instance với config cơ bản
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 5000, // Giảm timeout từ 10s xuống 5s
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor - có thể thêm auth token sau
+// Request interceptor - thêm auth token
 apiClient.interceptors.request.use(
   (config) => {
-    // Có thể thêm authorization header ở đây
-    // const token = localStorage.getItem('authToken');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    // Thêm authorization header
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     
     console.log('API Request:', config.method?.toUpperCase(), config.url);
     return config;
@@ -35,18 +35,13 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('API Error:', error.response?.status, error.response?.data);
+    console.error('Response Error:', error.response?.status, error.response?.data);
     
-    // Xử lý các loại error phổ biến
+    // Xử lý 401 Unauthorized - redirect về login
     if (error.response?.status === 401) {
-      // Unauthorized - có thể redirect về login
-      console.error('Unauthorized access');
-    } else if (error.response?.status === 403) {
-      // Forbidden
-      console.error('Access forbidden');
-    } else if (error.response?.status === 500) {
-      // Server error
-      console.error('Internal server error');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userInfo');
+      window.location.href = '/login';
     }
     
     return Promise.reject(error);

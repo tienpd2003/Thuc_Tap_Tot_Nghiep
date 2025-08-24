@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login, requestPasswordReset } from "../../services/authService";
+import { useAuth } from "../../contexts/AuthContext";
+import { login, requestPasswordReset, getRedirectPathByRole } from "../../services/authService";
 import { FiUser, FiLock, FiEye, FiEyeOff, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
 import { FaCheckSquare, FaRegSquare, FaSpinner } from "react-icons/fa";
 import { MdHeadsetMic } from "react-icons/md";
 
 function Login() {
   const navigate = useNavigate();
+  const { login: authLogin, getUserRole } = useAuth();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -31,10 +33,38 @@ function Login() {
   }, []);
 
   const handleLogin = async (e) => {
-    if (username == "admin") navigate("/admin/")
-      else if (username === "employee") navigate("/employee/")
-    else navigate("/approver/")
-    
+    e.preventDefault();
+    setError("");
+    setInfo("");
+    setLoading(true);
+
+    try {
+      // Lưu thông tin đăng nhập nếu remember me được chọn
+      if (rememberMe) {
+        localStorage.setItem("rememberedCredentials", JSON.stringify({ username, password }));
+      } else {
+        localStorage.removeItem("rememberedCredentials");
+      }
+
+      // Gọi API đăng nhập
+      const loginResponse = await login({ username, password });
+      
+      // Sử dụng AuthContext để lưu thông tin đăng nhập
+      authLogin(loginResponse);
+      
+      // Lấy role và redirect
+      const userRole = getUserRole();
+      const redirectPath = getRedirectPathByRole(userRole);
+      
+      // Redirect ngay lập tức sau khi đăng nhập thành công
+      navigate(redirectPath);
+      
+    } catch (err) {
+      const message = err?.response?.data?.message || "Login failed. Please check your credentials.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleForgotPassword = async () => {
@@ -93,6 +123,13 @@ function Login() {
             </div>
           )}
 
+          {loading && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 text-blue-700 text-sm">
+              <FaSpinner className="h-4 w-4 flex-shrink-0 animate-spin" />
+              <span>Đang xác thực thông tin đăng nhập...</span>
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
@@ -104,12 +141,14 @@ function Login() {
                 </div>
                 <input
                   id="username"
+                  name="username"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae] transition-colors placeholder-gray-400 text-sm"
                   placeholder="Enter your username"
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -124,12 +163,14 @@ function Login() {
                 </div>
                 <input
                   id="password"
+                  name="password"
                   type={passwordVisible ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae] transition-colors placeholder-gray-400 text-sm"
                   placeholder="Enter your password"
                   required
+                  disabled={loading}
                 />
                 <button
                   type="button"
@@ -177,7 +218,7 @@ function Login() {
               className="w-full py-2.5 rounded-lg font-medium transition-all duration-200 bg-gradient-to-r from-[#5e83ae] to-[#4a6b8a] text-white shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading && <FaSpinner className="h-4 w-4 animate-spin" />}
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </button>
           </form>
         </div>
