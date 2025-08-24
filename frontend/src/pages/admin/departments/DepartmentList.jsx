@@ -101,8 +101,8 @@ const DepartmentList = () => {
       dept.description?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' ||
-      (statusFilter === 'active' && dept.active) ||
-      (statusFilter === 'inactive' && !dept.active);
+      (statusFilter === 'active' && dept.isActive) ||
+      (statusFilter === 'inactive' && !dept.isActive);
     
     return matchesSearch && matchesStatus;
   });
@@ -159,8 +159,8 @@ const DepartmentList = () => {
         `"${dept.name || ''}"`,
         `"${dept.description || ''}"`,
         `"${dept.managerName || 'Chưa có'}"`,
-        dept.employeeCount || 0,
-        dept.active ? 'Hoạt động' : 'Ngưng hoạt động'
+        dept.userCount || 0,
+        dept.isActive ? 'Hoạt động' : 'Ngưng hoạt động'
       ].join(','))
     ].join('\n');
 
@@ -214,9 +214,9 @@ const DepartmentList = () => {
                   <td>${dept.name || ''}</td>
                   <td>${dept.description || ''}</td>
                   <td>${dept.managerName || 'Chưa có'}</td>
-                  <td>${dept.employeeCount || 0}</td>
-                  <td class="status-${dept.active ? 'active' : 'inactive'}">
-                    ${dept.active ? 'Hoạt động' : 'Ngưng hoạt động'}
+                  <td>${dept.userCount || 0}</td>
+                  <td class="status-${dept.isActive ? 'active' : 'inactive'}">
+                    ${dept.isActive ? 'Hoạt động' : 'Ngưng hoạt động'}
                   </td>
                 </tr>
               `).join('')}
@@ -274,10 +274,10 @@ const DepartmentList = () => {
         switch (type) {
           case 'deactivate':
             await departmentService.deactivateDepartment(dept.id);
-            return { ...dept, active: false };
+            return { ...dept, isActive: false };
           case 'activate':
-            await departmentService.updateDepartment(dept.id, { ...dept, active: true });
-            return { ...dept, active: true };
+            await departmentService.updateDepartment(dept.id, { ...dept, isActive: true });
+            return { ...dept, isActive: true };
           case 'delete':
             await departmentService.deleteDepartment(dept.id);
             return dept.id;
@@ -309,7 +309,7 @@ const DepartmentList = () => {
 
   // Handle individual actions
   const handleEdit = (department) => {
-    navigate(`${ROUTES.ADMIN.DEPARTMENTS.EDIT.replace(':id', department.id)}`);
+    navigate(ROUTES.ADMIN.DEPARTMENTS.EDIT(department.id));
   };
 
   const handleDelete = async (department) => {
@@ -326,12 +326,12 @@ const DepartmentList = () => {
 
   const handleToggleStatus = async (department) => {
     try {
-      if (department.active) {
+      if (department.isActive) {
         await departmentService.deactivateDepartment(department.id);
-        dispatch(updateDepartment({ ...department, active: false }));
+        dispatch(updateDepartment({ ...department, isActive: false }));
       } else {
-        await departmentService.updateDepartment(department.id, { ...department, active: true });
-        dispatch(updateDepartment({ ...department, active: true }));
+        await departmentService.updateDepartment(department.id, { ...department, isActive: true });
+        dispatch(updateDepartment({ ...department, isActive: true }));
       }
     } catch (error) {
       console.error('Toggle status error:', error);
@@ -455,12 +455,12 @@ const DepartmentList = () => {
               </Grid>
               <Grid item xs={12} md={4}>
                 <Typography variant="body2" color="text.secondary">
-                  Đang hoạt động: {departments.filter(d => d.active).length}
+                  Đang hoạt động: {departments.filter(d => d.isActive).length}
                 </Typography>
               </Grid>
               <Grid item xs={12} md={4}>
                 <Typography variant="body2" color="text.secondary">
-                  Ngưng hoạt động: {departments.filter(d => !d.active).length}
+                  Ngưng hoạt động: {departments.filter(d => !d.isActive).length}
                 </Typography>
               </Grid>
             </Grid>
@@ -564,14 +564,14 @@ const DepartmentList = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <PeopleIcon fontSize="small" color="action" />
                       <Typography variant="body2">
-                        {department.employeeCount || 0}
+                        {department.userCount || 0}
                       </Typography>
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={department.active ? 'Hoạt động' : 'Ngưng hoạt động'}
-                      color={department.active ? 'success' : 'default'}
+                      label={department.isActive ? 'Hoạt động' : 'Ngưng hoạt động'}
+                      color={department.isActive ? 'success' : 'default'}
                       size="small"
                     />
                   </TableCell>
@@ -586,7 +586,7 @@ const DepartmentList = () => {
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title={department.active ? 'Ngưng hoạt động' : 'Kích hoạt'}>
+                      <Tooltip title={department.isActive ? 'Ngưng hoạt động' : 'Kích hoạt'}>
                         <IconButton
                           size="small"
                           onClick={() => handleToggleStatus(department)}

@@ -82,19 +82,24 @@ const DepartmentForm = () => {
             name: department.name || '',
             code: department.code || '',
             description: department.description || '',
-            managerId: department.managerId || null,
-            maxEmployees: department.maxEmployees || '',
-            active: department.active !== false
+            managerId: department.managerId || department.manager?.id || null,
+            maxEmployees: department.maxEmployees || department.maxUsers || '',
+            active: department.isActive !== false // Backend uses 'isActive', frontend uses 'active'
           });
           
           dispatch(setSelectedDepartment(department));
         } catch (error) {
           console.error('Error loading department:', error);
           dispatch(setError('Không thể tải thông tin phòng ban'));
+        } finally {
+          dispatch(setLoading(false));
         }
       };
 
       loadDepartment();
+    } else {
+      // For create mode, ensure loading is false
+      dispatch(setLoading(false));
     }
   }, [isEdit, id, dispatch]);
 
@@ -154,7 +159,7 @@ const DepartmentForm = () => {
         description: formData.description.trim(),
         managerId: formData.managerId,
         maxEmployees: formData.maxEmployees ? parseInt(formData.maxEmployees) : null,
-        active: formData.active
+        isActive: formData.active // Backend expects 'isActive', frontend uses 'active'
       };
 
       let result;
@@ -181,6 +186,8 @@ const DepartmentForm = () => {
       } else {
         dispatch(setError(isEdit ? 'Không thể cập nhật phòng ban' : 'Không thể tạo phòng ban'));
       }
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
@@ -194,251 +201,297 @@ const DepartmentForm = () => {
   const selectedManager = users.find(user => user.id === formData.managerId);
 
   return (
-    <Box>
+    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Box>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
-            {isEdit ? 'Chỉnh sửa phòng ban' : 'Thêm phòng ban mới'}
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {isEdit ? `Cập nhật thông tin phòng ban "${selectedDepartment?.name}"` : 'Tạo phòng ban mới cho tổ chức'}
-          </Typography>
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+              {isEdit ? 'Chỉnh sửa phòng ban' : 'Thêm phòng ban mới'}
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem' }}>
+              {isEdit ? `Cập nhật thông tin phòng ban "${selectedDepartment?.name}"` : 'Tạo phòng ban mới cho tổ chức'}
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate(ROUTES.ADMIN.DEPARTMENTS.LIST)}
+            sx={{ minWidth: 120 }}
+          >
+            Quay lại
+          </Button>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(ROUTES.ADMIN.DEPARTMENTS.LIST)}
-        >
-          Quay lại
-        </Button>
+
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => dispatch(setError(null))}>
+            {error}
+          </Alert>
+        )}
       </Box>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => dispatch(setError(null))}>
-          {error}
-        </Alert>
-      )}
-
       {/* Form */}
-      <Paper sx={{ p: 4 }}>
+      <Paper elevation={2} sx={{ overflow: 'hidden' }}>
         <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
-            {/* Basic Information */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <BusinessIcon color="primary" />
-                Thông tin cơ bản
-              </Typography>
-            </Grid>
+          {/* Basic Information Section */}
+          <Box sx={{ p: 4 }}>
+            <Typography variant="h6" gutterBottom sx={{ 
+              fontWeight: 'bold', 
+              color: 'primary.main',
+              borderBottom: '2px solid',
+              borderColor: 'primary.light',
+              pb: 1,
+              mb: 3,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}>
+              <BusinessIcon />
+              Thông tin cơ bản
+            </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Tên phòng ban *"
+                  placeholder="Nhập tên phòng ban"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  error={Boolean(formErrors.name)}
+                  helperText={formErrors.name}
+                  disabled={loading}
+                  required
+                  sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                />
+              </Grid>
 
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Tên phòng ban *"
-                placeholder="Nhập tên phòng ban"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                error={Boolean(formErrors.name)}
-                helperText={formErrors.name}
-                disabled={loading}
-              />
-            </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Mã phòng ban *"
+                  placeholder="VD: IT, HR, FINANCE"
+                  value={formData.code}
+                  onChange={(e) => handleInputChange('code', e.target.value.toUpperCase())}
+                  error={Boolean(formErrors.code)}
+                  helperText={formErrors.code || 'Chỉ được chứa chữ in hoa, số và dấu gạch dưới'}
+                  disabled={loading || (isEdit && selectedDepartment?.code)}
+                  required
+                  InputProps={{
+                    style: { textTransform: 'uppercase' }
+                  }}
+                  sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                />
+              </Grid>
 
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Mã phòng ban *"
-                placeholder="VD: IT, HR, FINANCE"
-                value={formData.code}
-                onChange={(e) => handleInputChange('code', e.target.value.toUpperCase())}
-                error={Boolean(formErrors.code)}
-                helperText={formErrors.code || 'Chỉ được chứa chữ in hoa, số và dấu gạch dưới'}
-                disabled={loading || (isEdit && selectedDepartment?.code)}
-                InputProps={{
-                  style: { textTransform: 'uppercase' }
-                }}
-              />
-            </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Mô tả"
+                  placeholder="Nhập mô tả về vai trò và chức năng của phòng ban"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  multiline
+                  rows={3}
+                  disabled={loading}
+                />
+              </Grid>
 
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Mô tả"
-                placeholder="Nhập mô tả về vai trò và chức năng của phòng ban"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                multiline
-                rows={3}
-                disabled={loading}
-              />
-            </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Số lượng nhân viên tối đa"
+                  placeholder="Nhập số lượng (để trống nếu không giới hạn)"
+                  value={formData.maxEmployees}
+                  onChange={(e) => handleInputChange('maxEmployees', e.target.value)}
+                  type="number"
+                  error={Boolean(formErrors.maxEmployees)}
+                  helperText={formErrors.maxEmployees || 'Để trống nếu không giới hạn số lượng'}
+                  disabled={loading}
+                  InputProps={{
+                    inputProps: { min: 1 }
+                  }}
+                  sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                />
+              </Grid>
 
-            {/* Management Information */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                Thông tin quản lý
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Autocomplete
-                fullWidth
-                options={availableManagers}
-                getOptionLabel={(option) => `${option.fullName} (${option.employeeCode})`}
-                value={selectedManager || null}
-                onChange={(event, newValue) => handleInputChange('managerId', newValue?.id || null)}
-                disabled={loading || loadingUsers}
-                loading={loadingUsers}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Trưởng phòng"
-                    placeholder="Chọn trưởng phòng"
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loadingUsers ? <CircularProgress color="inherit" size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                  />
-                )}
-                renderOption={(props, option) => (
-                  <Box component="li" {...props}>
-                    <Box>
-                      <Typography variant="body2" fontWeight="medium">
-                        {option.fullName}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {option.employeeCode} - {option.email}
-                      </Typography>
-                    </Box>
-                  </Box>
-                )}
-                noOptionsText="Không tìm thấy nhân viên phù hợp"
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Số lượng nhân viên tối đa"
-                placeholder="Nhập số lượng (để trống nếu không giới hạn)"
-                value={formData.maxEmployees}
-                onChange={(e) => handleInputChange('maxEmployees', e.target.value)}
-                type="number"
-                error={Boolean(formErrors.maxEmployees)}
-                helperText={formErrors.maxEmployees || 'Để trống nếu không giới hạn số lượng'}
-                disabled={loading}
-                InputProps={{
-                  inputProps: { min: 1 }
-                }}
-              />
-            </Grid>
-
-            {/* Status */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                Trạng thái
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.active}
-                    onChange={(e) => handleInputChange('active', e.target.checked)}
-                    disabled={loading}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="body2">
-                      Trạng thái hoạt động
-                    </Typography>
-                    <Chip
-                      label={formData.active ? 'Hoạt động' : 'Ngưng hoạt động'}
-                      color={formData.active ? 'success' : 'default'}
-                      size="small"
+              <Grid item xs={12} md={6}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.active}
+                      onChange={(e) => handleInputChange('active', e.target.checked)}
+                      disabled={loading}
+                      color="primary"
                     />
-                  </Box>
-                }
-              />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body1">
+                        Trạng thái hoạt động
+                      </Typography>
+                      <Chip
+                        label={formData.active ? 'Hoạt động' : 'Ngưng hoạt động'}
+                        color={formData.active ? 'success' : 'default'}
+                        size="small"
+                      />
+                    </Box>
+                  }
+                  sx={{ mt: 2 }}
+                />
+              </Grid>
             </Grid>
+          </Box>
 
-            {/* Current Department Info (for editing) */}
-            {isEdit && selectedDepartment && (
-              <>
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                    Thông tin hiện tại
-                  </Typography>
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} md={4}>
-                        <Typography variant="body2" color="text.secondary">
-                          Số nhân viên hiện tại:
+          {/* Manager Assignment Section */}
+          <Box sx={{ p: 4, bgcolor: 'grey.50', borderTop: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="h6" gutterBottom sx={{ 
+              fontWeight: 'bold', 
+              color: 'primary.main',
+              borderBottom: '2px solid',
+              borderColor: 'primary.light',
+              pb: 1,
+              mb: 3
+            }}>
+              Thông tin quản lý
+            </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Autocomplete
+                  fullWidth
+                  options={availableManagers}
+                  getOptionLabel={(option) => `${option.fullName} (${option.employeeCode})`}
+                  value={selectedManager || null}
+                  onChange={(event, newValue) => handleInputChange('managerId', newValue?.id || null)}
+                  disabled={loading || loadingUsers}
+                  loading={loadingUsers}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Trưởng phòng"
+                      placeholder="Chọn trưởng phòng"
+                      helperText="Có thể để trống, sẽ chỉ định sau"
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {loadingUsers ? <CircularProgress color="inherit" size={20} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                      sx={{ '& .MuiInputBase-root': { minHeight: 56 } }}
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props}>
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">
+                          {option.fullName}
                         </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {selectedDepartment.employeeCount || 0} người
+                        <Typography variant="caption" color="text.secondary">
+                          {option.employeeCode} - {option.email}
                         </Typography>
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <Typography variant="body2" color="text.secondary">
-                          Trưởng phòng hiện tại:
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {selectedDepartment.managerName || 'Chưa có'}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <Typography variant="body2" color="text.secondary">
-                          Ngày tạo:
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {selectedDepartment.createdAt 
-                            ? new Date(selectedDepartment.createdAt).toLocaleDateString('vi-VN')
-                            : 'N/A'
-                          }
-                        </Typography>
-                      </Grid>
-                    </Grid>
+                      </Box>
+                    </Box>
+                  )}
+                  noOptionsText="Không tìm thấy nhân viên phù hợp"
+                />
+              </Grid>
+            </Grid>
+          </Box>
+
+          {/* Current Department Info (for editing) */}
+          {isEdit && selectedDepartment && (
+            <Box sx={{ p: 4, bgcolor: 'primary.50', borderTop: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="h6" gutterBottom sx={{ 
+                fontWeight: 'bold', 
+                color: 'primary.main',
+                borderBottom: '2px solid',
+                borderColor: 'primary.light',
+                pb: 1,
+                mb: 3
+              }}>
+                Thông tin hiện tại
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ 
+                    p: 2, 
+                    border: '1px solid', 
+                    borderColor: 'primary.light', 
+                    borderRadius: 1,
+                    bgcolor: 'white'
+                  }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Số nhân viên hiện tại:
+                    </Typography>
+                    <Typography variant="h6" color="primary.main" fontWeight="bold">
+                      {selectedDepartment.userCount || 0} người
+                    </Typography>
                   </Box>
                 </Grid>
-              </>
-            )}
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ 
+                    p: 2, 
+                    border: '1px solid', 
+                    borderColor: 'primary.light', 
+                    borderRadius: 1,
+                    bgcolor: 'white'
+                  }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Trưởng phòng hiện tại:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {selectedDepartment.managerName || 'Chưa có'}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ 
+                    p: 2, 
+                    border: '1px solid', 
+                    borderColor: 'primary.light', 
+                    borderRadius: 1,
+                    bgcolor: 'white'
+                  }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Ngày tạo:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {selectedDepartment.createdAt 
+                        ? new Date(selectedDepartment.createdAt).toLocaleDateString('vi-VN')
+                        : 'N/A'
+                      }
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
 
-            {/* Action Buttons */}
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 3 }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate(ROUTES.ADMIN.DEPARTMENTS.LIST)}
-                  disabled={loading}
-                  size="large"
-                >
-                  Hủy
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-                  disabled={loading}
-                  size="large"
-                >
-                  {loading ? 'Đang xử lý...' : (isEdit ? 'Cập nhật' : 'Tạo mới')}
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
+          {/* Action Buttons */}
+          <Box sx={{ p: 4, bgcolor: 'grey.50', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={() => navigate(ROUTES.ADMIN.DEPARTMENTS.LIST)}
+              disabled={loading}
+              size="large"
+              sx={{ minWidth: 120, height: 48 }}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+              disabled={loading}
+              size="large"
+              sx={{ minWidth: 140, height: 48 }}
+            >
+              {loading ? 'Đang xử lý...' : (isEdit ? 'Cập nhật' : 'Tạo mới')}
+            </Button>
+          </Box>
         </form>
       </Paper>
     </Box>

@@ -90,26 +90,6 @@ const UserForm = () => {
     }
   }, [isEdit, loadUser]);
 
-  const handleInputChange = (field) => (event) => {
-    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
-    
-    // For select fields (department/role), ensure we store the value correctly
-    let finalValue = value;
-    if (field === 'departmentId' || field === 'roleId') {
-      finalValue = value === '' ? '' : value; // Keep as string for form, will convert to number on submit
-    }
-    
-    setFormData(prev => ({ ...prev, [field]: finalValue }));
-    
-    // Clear field error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-    
-    // Clear general error message when user makes changes
-    dispatch(clearError());
-  };
-
   const validateForm = () => {
     const newErrors = {};
 
@@ -246,216 +226,245 @@ const UserForm = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Box>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
-            {isEdit ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'}
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {isEdit ? `Cập nhật thông tin người dùng #${id}` : 'Tạo tài khoản người dùng mới trong hệ thống'}
-          </Typography>
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+              {isEdit ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'}
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem' }}>
+              {isEdit ? `Cập nhật thông tin người dùng #${id}` : 'Tạo tài khoản người dùng mới trong hệ thống'}
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate(ROUTES.ADMIN.USERS.LIST)}
+            sx={{ minWidth: 120 }}
+          >
+            Quay lại
+          </Button>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(ROUTES.ADMIN.USERS.LIST)}
-        >
-          Quay lại
-        </Button>
+
+        {/* Success Message */}
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {successMessage}
+          </Alert>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => dispatch(clearError())}>
+            {error}
+          </Alert>
+        )}
       </Box>
 
-      {/* Success Message */}
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          {successMessage}
-        </Alert>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => dispatch(clearError())}>
-          {error}
-        </Alert>
-      )}
-
       {/* Form */}
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={3}>
-          {/* Basic Information */}
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Thông tin cơ bản
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Mã nhân viên *"
-                      value={formData.employeeCode}
-                      onChange={handleInputChange('employeeCode')}
-                      error={!!errors.employeeCode}
-                      helperText={errors.employeeCode}
-                      disabled={isEdit} // Cannot edit employee code
-                    />
-                  </Grid>
-                  
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Tên đăng nhập *"
-                      value={formData.username}
-                      onChange={handleInputChange('username')}
-                      error={!!errors.username}
-                      helperText={errors.username}
-                      disabled={isEdit} // Cannot edit username
-                    />
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label={isEdit ? 'Mật khẩu mới (để trống nếu không đổi)' : 'Mật khẩu *'}
-                      type="password"
-                      value={formData.password}
-                      onChange={handleInputChange('password')}
-                      error={!!errors.password}
-                      helperText={errors.password}
-                    />
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Họ và tên *"
-                      value={formData.fullName}
-                      onChange={handleInputChange('fullName')}
-                      error={!!errors.fullName}
-                      helperText={errors.fullName}
-                    />
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Email *"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange('email')}
-                      error={!!errors.email}
-                      helperText={errors.email}
-                    />
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Số điện thoại"
-                      value={formData.phone}
-                      onChange={handleInputChange('phone')}
-                      error={!!errors.phone}
-                      helperText={errors.phone}
-                    />
-                  </Grid>
+      <Paper elevation={2} sx={{ overflow: 'hidden' }}>
+        <form onSubmit={handleSubmit}>
+          {/* Basic Information Section */}
+          <Card sx={{ mb: 3 }}>
+            <CardContent sx={{ p: 4 }}>
+              <Typography variant="h6" gutterBottom sx={{ 
+                fontWeight: 'bold', 
+                color: 'primary.main',
+                borderBottom: '2px solid',
+                borderColor: 'primary.light',
+                pb: 1,
+                mb: 3
+              }}>
+                Thông tin cơ bản
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Mã nhân viên *"
+                    value={formData.employeeCode}
+                    onChange={(e) => setFormData(prev => ({ ...prev, employeeCode: e.target.value }))}
+                    error={Boolean(errors.employeeCode)}
+                    helperText={errors.employeeCode}
+                    disabled={loading || submitLoading || isEdit}
+                    required
+                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                  />
                 </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Organization Information */}
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Thông tin tổ chức
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      select
-                      fullWidth
-                      label="Phòng ban *"
-                      value={formData.departmentId}
-                      onChange={handleInputChange('departmentId')}
-                      error={!!errors.departmentId}
-                      helperText={errors.departmentId}
-                    >
-                      <MenuItem value="">Chọn phòng ban</MenuItem>
-                      {departments.map((dept) => (
-                        <MenuItem key={dept.id} value={dept.id}>
-                          {dept.name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      select
-                      fullWidth
-                      label="Vai trò *"
-                      value={formData.roleId}
-                      onChange={handleInputChange('roleId')}
-                      error={!!errors.roleId}
-                      helperText={errors.roleId}
-                    >
-                      <MenuItem value="">Chọn vai trò</MenuItem>
-                      {roles.map((role) => (
-                        <MenuItem key={role.id} value={role.id}>
-                          {role.name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-
-                  {isEdit && (
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        select
-                        fullWidth
-                        label="Trạng thái"
-                        value={formData.isActive}
-                        onChange={handleInputChange('isActive')}
-                      >
-                        <MenuItem value={true}>Hoạt động</MenuItem>
-                        <MenuItem value={false}>Vô hiệu hóa</MenuItem>
-                      </TextField>
-                    </Grid>
-                  )}
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Tên đăng nhập *"
+                    value={formData.username}
+                    onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                    error={Boolean(errors.username)}
+                    helperText={errors.username}
+                    disabled={loading || submitLoading || isEdit}
+                    required
+                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                  />
                 </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Họ và tên *"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                    error={Boolean(errors.fullName)}
+                    helperText={errors.fullName}
+                    disabled={loading || submitLoading}
+                    required
+                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Email *"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    error={Boolean(errors.email)}
+                    helperText={errors.email}
+                    disabled={loading || submitLoading}
+                    required
+                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Số điện thoại"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    error={Boolean(errors.phone)}
+                    helperText={errors.phone}
+                    disabled={loading || submitLoading}
+                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label={isEdit ? "Mật khẩu mới (để trống nếu không đổi)" : "Mật khẩu *"}
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    error={Boolean(errors.password)}
+                    helperText={errors.password}
+                    disabled={loading || submitLoading}
+                    required={!isEdit}
+                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+
+          {/* Organization Information Section */}
+          <Card sx={{ mb: 3 }}>
+            <CardContent sx={{ p: 4 }}>
+              <Typography variant="h6" gutterBottom sx={{ 
+                fontWeight: 'bold', 
+                color: 'primary.main',
+                borderBottom: '2px solid',
+                borderColor: 'primary.light',
+                pb: 1,
+                mb: 3
+              }}>
+                Thông tin tổ chức
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Phòng ban *"
+                    value={formData.departmentId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
+                    error={Boolean(errors.departmentId)}
+                    helperText={errors.departmentId}
+                    disabled={loading || submitLoading}
+                    required
+                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                  >
+                    <MenuItem value="">
+                      <em>Chọn phòng ban</em>
+                    </MenuItem>
+                    {departments.map((dept) => (
+                      <MenuItem key={dept.id} value={dept.id.toString()}>
+                        {dept.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Vai trò *"
+                    value={formData.roleId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, roleId: e.target.value }))}
+                    error={Boolean(errors.roleId)}
+                    helperText={errors.roleId}
+                    disabled={loading || submitLoading}
+                    required
+                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                  >
+                    <MenuItem value="">
+                      <em>Chọn vai trò</em>
+                    </MenuItem>
+                    {roles.map((role) => (
+                      <MenuItem key={role.id} value={role.id.toString()}>
+                        {role.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Trạng thái"
+                    value={formData.isActive.toString()}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.value === 'true' }))}
+                    disabled={loading || submitLoading}
+                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                  >
+                    <MenuItem value="true">Hoạt động</MenuItem>
+                    <MenuItem value="false">Ngưng hoạt động</MenuItem>
+                  </TextField>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
 
           {/* Action Buttons */}
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-              <Button
-                variant="outlined"
-                onClick={() => navigate(ROUTES.ADMIN.USERS.LIST)}
-                disabled={submitLoading}
-              >
-                Hủy
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                startIcon={submitLoading ? <CircularProgress size={16} /> : <SaveIcon />}
-                disabled={submitLoading}
-              >
-                {submitLoading ? 'Đang lưu...' : (isEdit ? 'Cập nhật' : 'Tạo mới')}
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </form>
+          <Box sx={{ p: 4, bgcolor: 'grey.50', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={() => navigate(ROUTES.ADMIN.USERS.LIST)}
+              disabled={submitLoading}
+              size="large"
+              sx={{ minWidth: 120, height: 48 }}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading || submitLoading}
+              startIcon={submitLoading ? <CircularProgress size={20} /> : <SaveIcon />}
+              size="large"
+              sx={{ minWidth: 140, height: 48 }}
+            >
+              {submitLoading ? 'Đang xử lý...' : (isEdit ? 'Cập nhật' : 'Tạo mới')}
+            </Button>
+          </Box>
+        </form>
+      </Paper>
     </Box>
   );
 };
