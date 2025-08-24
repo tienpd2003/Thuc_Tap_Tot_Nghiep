@@ -30,7 +30,7 @@ const Toolbox = ({ onAddField }) => {
   ];
 
   return (
-    <div className="w-64 p-4 border-l border-gray-200 h-full overflow-y-auto">
+    <div className="w-80 p-4 border-l border-gray-200 h-full overflow-y-auto">
       <h3 className="font-semibold text-gray-800 mb-4">Elements</h3>
       <div className="space-y-2">
         {fieldTypes.map((field) => (

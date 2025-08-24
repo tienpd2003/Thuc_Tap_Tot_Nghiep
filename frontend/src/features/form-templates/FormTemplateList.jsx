@@ -218,20 +218,20 @@ const FormTemplateList = () => {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <FiFilter className="h-5 w-5" />
-              Filters
+              Bộ lọc
             </h2>
             <div className="flex gap-2">
               <button
                 onClick={handleApplyFilters}
                 className="px-4 py-2 bg-[#5e83ae] text-white rounded-lg hover:bg-[#4a6b8a] transition-colors text-sm font-medium"
               >
-                Apply Filters
+                Áp dụng
               </button>
               <button
                 onClick={handleResetFilters}
                 className="px-4 py-2 border border-[#5e83ae] text-[#5e83ae] rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
               >
-                Reset
+                Loại bỏ
               </button>
             </div>
           </div>
@@ -240,7 +240,7 @@ const FormTemplateList = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             {/* Keyword Search */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiSearch className="h-5 w-5 text-gray-400" />
@@ -249,7 +249,7 @@ const FormTemplateList = () => {
                   type="text"
                   value={filters.keyword}
                   onChange={(e) => handleFilterChange("keyword", e.target.value)}
-                  placeholder="Search by name or description"
+                  placeholder="Tìm kiếm theo tên, mô tả form"
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae] text-sm"
                 />
               </div>
@@ -257,13 +257,13 @@ const FormTemplateList = () => {
 
             {/* Status Filter - Popover */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
               <button
                 onClick={handleStatusClick}
                 className="w-full text-left px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm flex items-center justify-between"
               >
                 <span className={filters.isActive === "" ? "text-gray-500" : "text-gray-900"}>
-                  {filters.isActive === "" ? "All Status" :
+                  {filters.isActive === "" ? "Tất cả" :
                     filters.isActive === "true" ? "Active" : "Inactive"}
                 </span>
                 <FiChevronDown className="h-4 w-4 text-gray-400" />
@@ -280,7 +280,7 @@ const FormTemplateList = () => {
                     onClick={() => { handleFilterChange("isActive", ""); handleStatusClose(); }}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                   >
-                    All Status
+                    Tất cả
                   </button>
                   <button
                     onClick={() => { handleFilterChange("isActive", "true"); handleStatusClose(); }}
@@ -299,13 +299,13 @@ const FormTemplateList = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Created By</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Người tạo</label>
               <button
                 onClick={handleCreatedByClick}
                 className="w-full text-left px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm flex items-center justify-between"
               >
                 <span className={filters.createdById === "" ? "text-gray-500" : "text-gray-900"}>
-                  {filters.createdById === "" ? "Select Admin" :
+                  {filters.createdById === "" ? "Tất cả" :
                     admins.find(a => a.id == filters.createdById)?.fullName || "Unknown"}
                 </span>
                 <FiChevronDown className="h-4 w-4 text-gray-400" />
@@ -328,7 +328,7 @@ const FormTemplateList = () => {
                     onClick={() => { handleFilterChange("createdById", ""); handleCreatedByClose(); }}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                   >
-                    All Admins
+                    Tất cả
                   </button>
                   {admins.map((admin) => (
                     <button
@@ -345,13 +345,13 @@ const FormTemplateList = () => {
 
             {/* Department Filter - Popover */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Approval Department</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Phòng ban xử lý</label>
               <button
                 onClick={handleDepartmentClick}
                 className="w-full text-left px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm flex items-center justify-between"
               >
                 <span className={filters.approvalDepartmentId === "" ? "text-gray-500" : "text-gray-900"}>
-                  {filters.approvalDepartmentId === "" ? "Select Department" :
+                  {filters.approvalDepartmentId === "" ? "Tất cả" :
                     departments.find(d => d.id == filters.approvalDepartmentId)?.name || "Unknown"}
                 </span>
                 <FiChevronDown className="h-4 w-4 text-gray-400" />
@@ -374,7 +374,7 @@ const FormTemplateList = () => {
                     onClick={() => { handleFilterChange("approvalDepartmentId", ""); handleDepartmentClose(); }}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                   >
-                    All Departments
+                    Tất cả
                   </button>
                   {departments.map((department) => (
                     <button
@@ -443,7 +443,7 @@ const FormTemplateList = () => {
                   <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">#</th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
                     <div className="flex items-center">
-                      Form Template Details
+                      Thông tin form
                     </div>
                   </th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -451,7 +451,7 @@ const FormTemplateList = () => {
                       onClick={() => handleSort('createdById')}
                       className="flex items-center hover:bg-[#4a6b8a] px-2 py-1 rounded transition-colors"
                     >
-                      Created By
+                      Người tạo
                       <div className="ml-1">
                         {getSortIcon('createdById')}
                       </div>
@@ -462,7 +462,7 @@ const FormTemplateList = () => {
                       onClick={() => handleSort('isActive')}
                       className="flex items-center hover:bg-[#4a6b8a] px-2 py-1 rounded transition-colors"
                     >
-                      Status
+                      Trạng thái
                       <div className="ml-1">
                         {getSortIcon('isActive')}
                       </div>
@@ -473,7 +473,7 @@ const FormTemplateList = () => {
                       onClick={() => handleSort('createdAt')}
                       className="flex items-center hover:bg-[#4a6b8a] px-2 py-1 rounded transition-colors"
                     >
-                      Created
+                      Ngày tạo
                       <div className="ml-1">
                         {getSortIcon('createdAt')}
                       </div>
@@ -484,13 +484,13 @@ const FormTemplateList = () => {
                       onClick={() => handleSort('updatedAt')}
                       className="flex items-center hover:bg-[#4a6b8a] px-2 py-1 rounded transition-colors"
                     >
-                      Updated
+                      Ngày cập nhật
                       <div className="ml-1">
                         {getSortIcon('updatedAt')}
                       </div>
                     </button>
                   </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -504,8 +504,8 @@ const FormTemplateList = () => {
                       ) : (
                         <div className="flex flex-col items-center">
                           <FiX className="h-12 w-12 text-gray-300 mb-2" />
-                          <p className="text-lg font-medium text-gray-400">No form templates found</p>
-                          <p className="text-sm text-gray-400">Try adjusting your filters</p>
+                          <p className="text-lg font-medium text-gray-400">Không tìm thấy kết quả phù hợp</p>
+                          <p className="text-sm text-gray-400">Điều chỉnh lại bộ lọc</p>
                         </div>
                       )}
                     </td>
@@ -523,7 +523,7 @@ const FormTemplateList = () => {
                             <p className="text-sm text-gray-600 mt-1">{item.description}</p>
                           </div>
                           <div className="mt-2">
-                            <span className="text-xs font-medium text-gray-500 block mb-2">Approval Workflow:</span>
+                            <span className="text-xs font-medium text-gray-500 block mb-2">Quy trình xử lý:</span>
                             <div className="flex items-center flex-wrap gap-2">
                               {item.approvalDepartments && item.approvalDepartments.map((dept, idx) => (
                                 <React.Fragment key={idx}>
@@ -593,7 +593,7 @@ const FormTemplateList = () => {
           {content && content.length > 0 && (
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">Show:</span>
+                <span className="text-sm text-gray-700">Số lượng dòng:</span>
                 <button
                   onClick={handlePageSizeClick}
                   className="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50 transition-colors flex items-center gap-1"
@@ -688,7 +688,7 @@ const FormTemplateList = () => {
 
               {data && (
                 <div className="text-sm text-gray-600">
-                  View {number * size + 1} - {Math.min((number + 1) * size, totalElements)} of {totalElements} results
+                  Hiển thị {number * size + 1} - {Math.min((number + 1) * size, totalElements)} trong {totalElements} kết quả
                 </div>
               )}
             </div>

@@ -45,7 +45,7 @@ const SortableFormField = ({field, index, onEdit, onRemove, onFieldChange, formD
       {!disabled && (
         <div className="flex justify-between items-center mb-3">
           <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium capitalize">
-            {field.type.toLowerCase()}
+            {field.type} - {field.key}
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -88,8 +88,11 @@ const SortableFormField = ({field, index, onEdit, onRemove, onFieldChange, formD
           value={formData && formData[field.key] !== undefined ? formData[field.key] : ""}
           onChange={(value) => onFieldChange(field.key, value)}
           disabled={disabled}
-          placeholder={field.helpText}
+          placeholder={field.placeholder || `Nhập ${field.label.toLowerCase()}`}
         />
+        {field.helpText && (
+          <p className="text-sm text-gray-500 mt-1">{field.helpText}</p>
+        )}
       </div>
     </div>
   );
