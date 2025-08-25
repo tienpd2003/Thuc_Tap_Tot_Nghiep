@@ -44,23 +44,24 @@ public class AdminStatsService {
         stats.setTotalDepartments(departmentRepository.count());
         stats.setActiveUsers(userRepository.countByIsActive(true));
         
-        // Thống kê theo trạng thái (tối ưu với native query)
+        // Thống kê theo trạng thái thực tế (PENDING, IN_PROGRESS, REJECTED, CANCELLED, COMPLETED)
         Map<String, Long> statusCounts = getTicketStatusCounts();
         stats.setPendingTickets(statusCounts.getOrDefault("PENDING", 0L));
-        stats.setApprovedTickets(statusCounts.getOrDefault("APPROVED", 0L));
+        stats.setApprovedTickets(statusCounts.getOrDefault("COMPLETED", 0L)); // COMPLETED thay vì APPROVED
         stats.setRejectedTickets(statusCounts.getOrDefault("REJECTED", 0L));
         stats.setInProgressTickets(statusCounts.getOrDefault("IN_PROGRESS", 0L));
+        Long cancelledTickets = statusCounts.getOrDefault("CANCELLED", 0L);
         
-        // Tính tỷ lệ
-        long totalProcessedTickets = stats.getApprovedTickets() + stats.getRejectedTickets();
-        if (totalProcessedTickets > 0) {
-            stats.setApprovalRate((double) stats.getApprovedTickets() / totalProcessedTickets * 100);
-            stats.setRejectionRate((double) stats.getRejectedTickets() / totalProcessedTickets * 100);
+        // Tính tỷ lệ hoàn thành (completion rate) thay vì approval rate
+        if (stats.getTotalTickets() > 0) {
+            stats.setApprovalRate((double) stats.getApprovedTickets() / stats.getTotalTickets() * 100); // Thực chất là completion rate
+            stats.setRejectionRate((double) (stats.getRejectedTickets() + cancelledTickets) / stats.getTotalTickets() * 100);
         } else {
             stats.setApprovalRate(0.0);
             stats.setRejectionRate(0.0);
         }
         
+        // Tỷ lệ đang xử lý (pending + in_progress)
         long totalActiveTickets = stats.getPendingTickets() + stats.getInProgressTickets();
         if (stats.getTotalTickets() > 0) {
             stats.setProcessingRate((double) totalActiveTickets / stats.getTotalTickets() * 100);
@@ -94,11 +95,11 @@ public class AdminStatsService {
             deptStat.setDepartmentId(dept.getId());
             deptStat.setDepartmentName(dept.getName());
             
-            // Thống kê ticket của phòng ban (sử dụng optimized query)
+            // Thống kê ticket của phòng ban với status thực tế
             Map<String, Long> deptTicketCounts = getTicketCountsByDepartment(dept.getId());
             deptStat.setTotalTickets(deptTicketCounts.values().stream().mapToLong(Long::longValue).sum());
             deptStat.setPendingTickets(deptTicketCounts.getOrDefault("PENDING", 0L));
-            deptStat.setApprovedTickets(deptTicketCounts.getOrDefault("APPROVED", 0L));
+            deptStat.setApprovedTickets(deptTicketCounts.getOrDefault("COMPLETED", 0L)); // COMPLETED thay vì APPROVED
             deptStat.setRejectedTickets(deptTicketCounts.getOrDefault("REJECTED", 0L));
             deptStat.setInProgressTickets(deptTicketCounts.getOrDefault("IN_PROGRESS", 0L));
             
@@ -106,10 +107,9 @@ public class AdminStatsService {
             deptStat.setTotalUsers((long) userRepository.findByDepartmentId(dept.getId()).size());
             deptStat.setActiveUsers(userRepository.countByDepartmentIdAndIsActive(dept.getId(), true));
             
-            // Tính tỷ lệ duyệt
-            long deptProcessedTickets = deptStat.getApprovedTickets() + deptStat.getRejectedTickets();
-            if (deptProcessedTickets > 0) {
-                deptStat.setApprovalRate((double) deptStat.getApprovedTickets() / deptProcessedTickets * 100);
+            // Tính tỷ lệ hoàn thành (completion rate) cho phòng ban
+            if (deptStat.getTotalTickets() > 0) {
+                deptStat.setApprovalRate((double) deptStat.getApprovedTickets() / deptStat.getTotalTickets() * 100);
             } else {
                 deptStat.setApprovalRate(0.0);
             }
@@ -149,14 +149,15 @@ public class AdminStatsService {
             
             dayStat.setCreatedTickets(ticketRepository.countByCreatedAtBetween(dayStart, dayEnd));
             
-            // Đếm ticket được duyệt/từ chối trong ngày (cần bảng ticket_approvals để chính xác)
-            // Tạm thời sử dụng logic đơn giản
-            dayStat.setApprovedTickets(0L); // TODO: Implement với TicketApproval
-            dayStat.setRejectedTickets(0L); // TODO: Implement với TicketApproval
+            // Tạm thời sử dụng 0 cho completed/rejected daily vì cần thêm updatedAt tracking
+            // TODO: Thêm method countByCurrentStatusNameAndUpdatedAtBetween vào repository
+            dayStat.setApprovedTickets(0L); // Tickets completed trong ngày
+            dayStat.setRejectedTickets(0L); // Tickets rejected/cancelled trong ngày
             
             // Đếm ticket đang pending tại thời điểm cuối ngày
             dayStat.setPendingTickets(ticketRepository.countByCurrentStatusNameAndCreatedAtLessThanEqual("PENDING", dayEnd));
             
+            // Tổng ticket hoạt động = tickets tạo mới trong ngày
             dayStat.setTotalActiveTickets(dayStat.getCreatedTickets());
             
             dailyStats.add(dayStat);

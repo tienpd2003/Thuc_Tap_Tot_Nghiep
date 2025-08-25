@@ -40,6 +40,18 @@ public class DepartmentService {
                     // Thêm user count để hiển thị thống kê
                     long userCount = userRepository.findByDepartmentId(department.getId()).size();
                     dto.setUserCount(userCount);
+                    
+                    // Thêm thông tin department head
+                    if (department.getDepartmentHeadId() != null) {
+                        userRepository.findById(department.getDepartmentHeadId())
+                                .ifPresent(head -> {
+                                    dto.setDepartmentHeadId(head.getId());
+                                    dto.setDepartmentHeadName(head.getFullName());
+                                    dto.setDepartmentHeadEmail(head.getEmail());
+                                    dto.setDepartmentHeadEmployeeCode(head.getEmployeeCode());
+                                });
+                    }
+                    
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -53,6 +65,18 @@ public class DepartmentService {
                     // Thêm user count để hiển thị thống kê
                     long userCount = userRepository.findByDepartmentId(department.getId()).size();
                     dto.setUserCount(userCount);
+                    
+                    // Thêm thông tin department head
+                    if (department.getDepartmentHeadId() != null) {
+                        userRepository.findById(department.getDepartmentHeadId())
+                                .ifPresent(head -> {
+                                    dto.setDepartmentHeadId(head.getId());
+                                    dto.setDepartmentHeadName(head.getFullName());
+                                    dto.setDepartmentHeadEmail(head.getEmail());
+                                    dto.setDepartmentHeadEmployeeCode(head.getEmployeeCode());
+                                });
+                    }
+                    
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -69,6 +93,18 @@ public class DepartmentService {
                             .map(userMapper::toDto)
                             .collect(Collectors.toList());
                     dto.setUsers(userDtos);
+                    
+                    // Thêm thông tin department head
+                    if (department.getDepartmentHeadId() != null) {
+                        userRepository.findById(department.getDepartmentHeadId())
+                                .ifPresent(head -> {
+                                    dto.setDepartmentHeadId(head.getId());
+                                    dto.setDepartmentHeadName(head.getFullName());
+                                    dto.setDepartmentHeadEmail(head.getEmail());
+                                    dto.setDepartmentHeadEmployeeCode(head.getEmployeeCode());
+                                });
+                    }
+                    
                     return dto;
                 });
     }
@@ -99,12 +135,43 @@ public class DepartmentService {
                     existingDepartment.setName(departmentDto.getName());
                     existingDepartment.setDescription(departmentDto.getDescription());
                     existingDepartment.setIsActive(departmentDto.getIsActive());
+                    
+                    // Update department head
+                    if (departmentDto.getDepartmentHeadId() != null) {
+                        // Validate that the user exists and has APPROVER role
+                        Optional<User> headUser = userRepository.findById(departmentDto.getDepartmentHeadId());
+                        if (headUser.isEmpty()) {
+                            throw new RuntimeException("Selected department head user not found");
+                        }
+                        
+                        // Check if user has APPROVER role
+                        if (headUser.get().getRole() == null || 
+                            !"APPROVER".equals(headUser.get().getRole().getName())) {
+                            throw new RuntimeException("Only users with APPROVER role can be assigned as department heads");
+                        }
+                        
+                        existingDepartment.setDepartmentHeadId(departmentDto.getDepartmentHeadId());
+                    } else {
+                        existingDepartment.setDepartmentHeadId(null);
+                    }
 
                     Department updatedDepartment = departmentRepository.save(existingDepartment);
                     DepartmentDto dto = departmentMapper.toDto(updatedDepartment);
                     // Thêm user count để hiển thị thống kê
                     long userCount = userRepository.findByDepartmentId(updatedDepartment.getId()).size();
                     dto.setUserCount(userCount);
+                    
+                    // Thêm thông tin department head
+                    if (updatedDepartment.getDepartmentHeadId() != null) {
+                        userRepository.findById(updatedDepartment.getDepartmentHeadId())
+                                .ifPresent(head -> {
+                                    dto.setDepartmentHeadId(head.getId());
+                                    dto.setDepartmentHeadName(head.getFullName());
+                                    dto.setDepartmentHeadEmail(head.getEmail());
+                                    dto.setDepartmentHeadEmployeeCode(head.getEmployeeCode());
+                                });
+                    }
+                    
                     return dto;
                 });
     }
@@ -139,6 +206,49 @@ public class DepartmentService {
         return users.stream()
                 .map(userMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    public Optional<DepartmentDto> updateDepartmentHead(Long departmentId, Long headUserId) {
+        return departmentRepository.findById(departmentId)
+                .map(department -> {
+                    if (headUserId != null) {
+                        // Validate that the user exists
+                        Optional<User> headUser = userRepository.findById(headUserId);
+                        if (headUser.isEmpty()) {
+                            throw new RuntimeException("Selected user not found");
+                        }
+                        
+                        // Check if user has APPROVER role
+                        if (headUser.get().getRole() == null || 
+                            !"APPROVER".equals(headUser.get().getRole().getName())) {
+                            throw new RuntimeException("Only users with APPROVER role can be assigned as department heads");
+                        }
+                        
+                        department.setDepartmentHeadId(headUserId);
+                    } else {
+                        department.setDepartmentHeadId(null);
+                    }
+
+                    Department updatedDepartment = departmentRepository.save(department);
+                    DepartmentDto dto = departmentMapper.toDto(updatedDepartment);
+                    
+                    // Add user count
+                    long userCount = userRepository.findByDepartmentId(updatedDepartment.getId()).size();
+                    dto.setUserCount(userCount);
+                    
+                    // Add department head info
+                    if (updatedDepartment.getDepartmentHeadId() != null) {
+                        userRepository.findById(updatedDepartment.getDepartmentHeadId())
+                                .ifPresent(head -> {
+                                    dto.setDepartmentHeadId(head.getId());
+                                    dto.setDepartmentHeadName(head.getFullName());
+                                    dto.setDepartmentHeadEmail(head.getEmail());
+                                    dto.setDepartmentHeadEmployeeCode(head.getEmployeeCode());
+                                });
+                    }
+                    
+                    return dto;
+                });
     }
 
 }

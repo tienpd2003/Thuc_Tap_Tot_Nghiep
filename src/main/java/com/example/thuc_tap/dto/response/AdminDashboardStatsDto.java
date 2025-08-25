@@ -23,16 +23,16 @@ public class AdminDashboardStatsDto {
     private Long totalDepartments;
     private Long activeUsers;
     
-    // Thống kê theo trạng thái ticket
+    // Thống kê theo trạng thái ticket (PENDING, IN_PROGRESS, REJECTED, CANCELLED, COMPLETED)
     private Long pendingTickets;
-    private Long approvedTickets;
-    private Long rejectedTickets;
+    private Long approvedTickets;      // Thực chất là completedTickets (COMPLETED status)
+    private Long rejectedTickets;      // Bao gồm REJECTED + CANCELLED
     private Long inProgressTickets;
     
     // Tỷ lệ xử lý
-    private Double approvalRate;       // Tỷ lệ duyệt (approved / total)
-    private Double rejectionRate;      // Tỷ lệ từ chối (rejected / total)
-    private Double processingRate;     // Tỷ lệ đang xử lý (pending + in_progress / total)
+    private Double approvalRate;       // Thực chất là completion rate (completed / total * 100)
+    private Double rejectionRate;      // Tỷ lệ từ chối + hủy (rejected + cancelled / total * 100)
+    private Double processingRate;     // Tỷ lệ đang xử lý (pending + in_progress / total * 100)
     
     // Thống kê theo thời gian
     private LocalDateTime lastUpdated;
