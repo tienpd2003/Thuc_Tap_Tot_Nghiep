@@ -79,4 +79,26 @@ public class DepartmentController {
         List<UserDto> users = departmentService.getUsersByDepartment(id);
         return ResponseEntity.ok(users);
     }
+
+    @PutMapping("/{id}/head")
+    public ResponseEntity<DepartmentDto> updateDepartmentHead(@PathVariable Long id, @RequestBody Long headUserId) {
+        try {
+            Optional<DepartmentDto> updatedDepartment = departmentService.updateDepartmentHead(id, headUserId);
+            return updatedDepartment.map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @DeleteMapping("/{id}/head")
+    public ResponseEntity<DepartmentDto> removeDepartmentHead(@PathVariable Long id) {
+        try {
+            Optional<DepartmentDto> updatedDepartment = departmentService.updateDepartmentHead(id, null);
+            return updatedDepartment.map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

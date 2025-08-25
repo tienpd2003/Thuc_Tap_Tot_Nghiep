@@ -29,6 +29,12 @@ public class DepartmentDto {
     
     private LocalDateTime updatedAt;
     
+    // Department Head Information
+    private Long departmentHeadId;
+    private String departmentHeadName;
+    private String departmentHeadEmail;
+    private String departmentHeadEmployeeCode;
+    
     // Additional fields for display purposes
     private Long userCount; // Number of users in this department
     

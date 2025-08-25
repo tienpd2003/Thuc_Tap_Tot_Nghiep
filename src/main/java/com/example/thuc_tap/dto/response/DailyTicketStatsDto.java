@@ -17,10 +17,10 @@ public class DailyTicketStatsDto {
     
     private LocalDate date;
     
-    // Số lượng ticket theo trạng thái trong ngày
+    // Số lượng ticket theo trạng thái trong ngày (PENDING, IN_PROGRESS, REJECTED, CANCELLED, COMPLETED)
     private Long createdTickets;   // Ticket được tạo mới
-    private Long approvedTickets;  // Ticket được duyệt
-    private Long rejectedTickets;  // Ticket bị từ chối
+    private Long approvedTickets;  // Ticket được hoàn thành (COMPLETED status)
+    private Long rejectedTickets;  // Ticket bị từ chối/hủy (REJECTED + CANCELLED status)
     private Long pendingTickets;   // Ticket đang chờ xử lý
     
     // Tổng số ticket hoạt động trong ngày

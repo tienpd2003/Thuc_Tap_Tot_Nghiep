@@ -30,6 +30,9 @@ public class Department {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
     
+    @Column(name = "department_head_id")
+    private Long departmentHeadId;
+    
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -39,6 +42,9 @@ public class Department {
     private LocalDateTime updatedAt;
     
     // Relationships
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_head_id", insertable = false, updatable = false)
+    private User departmentHead;
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL)
     private List<User> users;
     
