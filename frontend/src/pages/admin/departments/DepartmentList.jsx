@@ -585,7 +585,7 @@ const DepartmentList = () => {
                           onClick={() => handleEdit(department)}
                           color="primary"
                         >
-                          <EditIcon fontSize="small" />
+                          <EditIcon />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title={department.isActive ? 'Ngưng hoạt động' : 'Kích hoạt'}>
@@ -603,7 +603,7 @@ const DepartmentList = () => {
                           onClick={() => handleDelete(department)}
                           color="error"
                         >
-                          <DeleteIcon fontSize="small" />
+                          <DeleteIcon />
                         </IconButton>
                       </Tooltip>
                     </Box>

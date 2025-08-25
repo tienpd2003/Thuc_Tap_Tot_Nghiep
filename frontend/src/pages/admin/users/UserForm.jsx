@@ -381,14 +381,35 @@ const UserForm = () => {
                   <TextField
                     select
                     fullWidth
-                    label="Phòng ban *"
+                    label="Phòng ban"
                     value={formData.departmentId}
                     onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
                     error={Boolean(errors.departmentId)}
                     helperText={errors.departmentId}
                     disabled={loading || submitLoading}
                     required
-                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                    displayEmpty
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ 
+                      '& .MuiInputBase-root': { 
+                        height: 56,
+                        '& .MuiSelect-select': {
+                          minHeight: '1.4375em',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }
+                      }
+                    }}
+                    SelectProps={{
+                      displayEmpty: true,
+                      renderValue: (selected) => {
+                        if (!selected) {
+                          return <em style={{ color: '#999', fontStyle: 'italic' }}>Chọn phòng ban</em>;
+                        }
+                        const selectedDept = departments.find(dept => dept.id.toString() === selected);
+                        return selectedDept ? selectedDept.name : '';
+                      }
+                    }}
                   >
                     <MenuItem value="">
                       <em>Chọn phòng ban</em>
@@ -404,14 +425,35 @@ const UserForm = () => {
                   <TextField
                     select
                     fullWidth
-                    label="Vai trò *"
+                    label="Vai trò"
                     value={formData.roleId}
                     onChange={(e) => setFormData(prev => ({ ...prev, roleId: e.target.value }))}
                     error={Boolean(errors.roleId)}
                     helperText={errors.roleId}
                     disabled={loading || submitLoading}
                     required
-                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                    displayEmpty
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ 
+                      '& .MuiInputBase-root': { 
+                        height: 56,
+                        '& .MuiSelect-select': {
+                          minHeight: '1.4375em',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }
+                      }
+                    }}
+                    SelectProps={{
+                      displayEmpty: true,
+                      renderValue: (selected) => {
+                        if (!selected) {
+                          return <em style={{ color: '#999', fontStyle: 'italic' }}>Chọn vai trò</em>;
+                        }
+                        const selectedRole = roles.find(role => role.id.toString() === selected);
+                        return selectedRole ? selectedRole.name : '';
+                      }
+                    }}
                   >
                     <MenuItem value="">
                       <em>Chọn vai trò</em>
@@ -431,7 +473,16 @@ const UserForm = () => {
                     value={formData.isActive.toString()}
                     onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.value === 'true' }))}
                     disabled={loading || submitLoading}
-                    sx={{ '& .MuiInputBase-root': { height: 56 } }}
+                    sx={{ 
+                      '& .MuiInputBase-root': { 
+                        height: 56,
+                        '& .MuiSelect-select': {
+                          minHeight: '1.4375em',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }
+                      }
+                    }}
                   >
                     <MenuItem value="true">Hoạt động</MenuItem>
                     <MenuItem value="false">Ngưng hoạt động</MenuItem>

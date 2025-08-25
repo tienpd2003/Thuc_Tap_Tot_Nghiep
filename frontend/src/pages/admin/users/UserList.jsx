@@ -602,6 +602,7 @@ const UserList = () => {
                           <IconButton
                             size="small"
                             onClick={() => navigate(ROUTES.ADMIN.USERS.EDIT(user.id))}
+                            color="primary"
                           >
                             <EditIcon />
                           </IconButton>

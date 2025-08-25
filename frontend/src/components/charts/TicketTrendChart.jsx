@@ -5,12 +5,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const TicketTrendChart = ({ data, loading, title = "Xu hướng Ticket theo thời gian" }) => {
   const theme = useTheme();
 
-  // Default sample data if no data provided
+  // Default sample data if no data provided - better visualization
   const defaultData = [
-    { period: 'T5', tickets: 8, completed: 6, pending: 2 },
-    { period: 'T6', tickets: 8, completed: 7, pending: 1 },
-    { period: 'T7', tickets: 8, completed: 5, pending: 3 },
-    { period: 'T8', tickets: 8, completed: 4, pending: 4 },
+    { period: '08-19', tickets: 8, completed: 6, pending: 2 },
+    { period: '08-20', tickets: 12, completed: 8, pending: 4 },
+    { period: '08-21', tickets: 6, completed: 4, pending: 2 },
+    { period: '08-22', tickets: 10, completed: 7, pending: 3 },
+    { period: '08-23', tickets: 9, completed: 5, pending: 4 },
+    { period: '08-24', tickets: 7, completed: 6, pending: 1 },
+    { period: '08-25', tickets: 11, completed: 8, pending: 3 },
   ];
 
   const chartData = data && data.length > 0 ? data : defaultData;
