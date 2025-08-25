@@ -77,7 +77,7 @@ const AdminDashboard = () => {
     { name: 'Quality Assurance', tickets: 3, users: 5, efficiency: 100 },
     { name: 'Human Resources', tickets: 5, users: 4, efficiency: 100 },
     { name: 'IT Department', tickets: 5, users: 6, efficiency: 100 },
-    { name: 'Operations', tickets: 3, users: 4, efficiency: 0 },
+    { name: 'Operations', tickets: 3, users: 4, efficiency: 50 },
     { name: 'Research & Development', tickets: 3, users: 4, efficiency: 0 },
     { name: 'Customer Service', tickets: 4, users: 4, efficiency: 0 },
     { name: 'Finance', tickets: 4, users: 5, efficiency: 0 },
@@ -213,19 +213,6 @@ const AdminDashboard = () => {
           </Box>
           
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {/* Notification Badge */}
-            <Button 
-              size="small" 
-              variant="contained" 
-              startIcon={<NotificationsIcon />} 
-              sx={{ 
-                bgcolor: 'rgba(255,255,255,0.2)', 
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } 
-              }}
-            >
-              Thông báo mới
-            </Button>
-            
             {/* Period Selector */}
             <FormControl 
               size="small" 
@@ -348,7 +335,7 @@ const AdminDashboard = () => {
                 <Chip 
                   size="small" 
                   label={selectedPeriod === 'week' ? '7 ngày qua' : selectedPeriod === 'month' ? '30 ngày qua' : '12 tháng qua'}
-                  sx={{ bgcolor: 'primary.main', color: 'white' }}
+                  sx={{ bgcolor: 'primary.main', color: 'white', marginLeft: '20px' }}
                 />
               </Box>
             </Box>
@@ -374,7 +361,7 @@ const AdminDashboard = () => {
             }}
           >
             <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', p: 2, bgcolor: 'background.paper' }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '400px' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <BusinessIcon sx={{ mr: 1.5, color: '#ed6c02' }} />
                   <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
@@ -412,7 +399,7 @@ const AdminDashboard = () => {
                     Tăng trưởng người dùng theo tháng
                   </Typography>
                 </Box>
-                <Button size="small" variant="outlined" color="primary">
+                <Button size="small" variant="outlined" color="primary" sx={{ marginLeft: '20px' }}>
                   Xem chi tiết
                 </Button>
               </Box>
@@ -428,7 +415,7 @@ const AdminDashboard = () => {
       </Grid>
 
       {/* Additional Statistics with Enhanced UI */}
-      <Grid container spacing={3}>
+      <Grid container spacing={3} sx={{ mt: 3 }}>
         <Grid item xs={12} md={6}>
           <Paper 
             elevation={0} 

@@ -7,18 +7,19 @@ const DepartmentChart = ({ data, loading }) => {
   const [activeIndex, setActiveIndex] = React.useState(null);
 
   // Default sample data if no data provided
-  const defaultData = [
-    { name: 'Marketing', tickets: 5, users: 5, efficiency: 100 },
-    { name: 'Quality Assurance', tickets: 3, users: 3, efficiency: 100 },
-    { name: 'Human Resources', tickets: 5, users: 5, efficiency: 100 },
-    { name: 'IT Department', tickets: 5, users: 5, efficiency: 100 },
-    { name: 'Operations', tickets: 3, users: 3, efficiency: 0 },
-    { name: 'Research & Development', tickets: 3, users: 3, efficiency: 0 },
-    { name: 'Customer Service', tickets: 5, users: 5, efficiency: 100 },
-    { name: 'Finance', tickets: 3, users: 3, efficiency: 0 },
-  ];
+  // const defaultData = [
+  //   { name: 'Marketing', tickets: 5, users: 5, efficiency: 100 },
+  //   { name: 'Quality Assurance', tickets: 3, users: 3, efficiency: 100 },
+  //   { name: 'Human Resources', tickets: 5, users: 5, efficiency: 100 },
+  //   { name: 'IT Department', tickets: 5, users: 5, efficiency: 100 },
+  //   { name: 'Operations', tickets: 3, users: 3, efficiency: 0 },
+  //   { name: 'Research & Development', tickets: 3, users: 3, efficiency: 0 },
+  //   { name: 'Customer Service', tickets: 5, users: 5, efficiency: 100 },
+  //   { name: 'Finance', tickets: 3, users: 3, efficiency: 0 },
+  // ];
 
-  const chartData = data && data.length > 0 ? data : defaultData;
+  // const chartData = data && data.length > 0 ? data : defaultData;
+  const chartData = data;
 
   // Colors for different departments
   const DEPARTMENT_COLORS = [
@@ -130,7 +131,7 @@ const DepartmentChart = ({ data, loading }) => {
         mt: 1,
         px: 1
       }}>
-        {chartData.slice(0, 4).map((entry, index) => (
+        {chartData.slice(0, 0).map((entry, index) => (
           <Box 
             key={`legend-${index}`} 
             sx={{ 
@@ -187,9 +188,9 @@ const DepartmentChart = ({ data, loading }) => {
           </Box>
         </Box>
       ) : (
-        <Box sx={{ height: 360, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ height: 450, display: 'flex', flexDirection: 'column' }}>
           {/* Pie Chart Section */}
-          <Box sx={{ height: 180, pt: 1 }}>
+          <Box sx={{ height: 250, pt: 1 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -199,8 +200,8 @@ const DepartmentChart = ({ data, loading }) => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  outerRadius={70}
-                  innerRadius={40}
+                  outerRadius={100}
+                  innerRadius={50}
                   paddingAngle={2}
                   fill="#8884d8"
                   dataKey="tickets"
@@ -228,7 +229,7 @@ const DepartmentChart = ({ data, loading }) => {
           {/* Department Statistics List */}
           <Box sx={{ flex: 1, overflowY: 'auto', mx: 2 }}>
             <List dense disablePadding>
-              {chartData.slice(0, 4).map((dept, index) => (
+              {chartData.map((dept, index) => (
                 <MuiTooltip 
                   key={dept.name} 
                   title={`${dept.name}: ${dept.tickets} tickets, ${dept.users} nhân viên`} 
@@ -261,7 +262,7 @@ const DepartmentChart = ({ data, loading }) => {
                             }} 
                           />
                           <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                            {dept.name.length > 15 ? `${dept.name.substring(0, 15)}...` : dept.name}
+                            {dept.name.length > 12 ? `${dept.name.substring(0, 12)}...` : dept.name}
                           </Typography>
                         </Box>
                       }
