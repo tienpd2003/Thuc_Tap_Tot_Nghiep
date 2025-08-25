@@ -49,6 +49,9 @@ public class TicketService {
 
     @Autowired
     private TicketApprovalService ticketApprovalService;
+    
+    @Autowired
+    private TicketHistoryService ticketHistoryService;
 
     /**
      * Lấy danh sách ticket của nhân viên với phân trang
@@ -128,6 +131,9 @@ public class TicketService {
 
         Ticket savedTicket = ticketRepository.save(ticket);
         
+        // Tạo lịch sử khi tạo ticket
+        ticketHistoryService.createTicketCreatedHistory(savedTicket, requester);
+        
         // Tạo approval tasks từ template workflows
         // TODO: Implement createApprovalTasksFromTemplate method
         // approvalService.createApprovalTasksFromTemplate(savedTicket);
@@ -194,6 +200,9 @@ public class TicketService {
         } else {
             approvalService.createApprovalTasksFromTemplate(savedTicket);
         }
+        
+        // Tạo lịch sử khi tạo ticket từ template
+        ticketHistoryService.createTicketCreatedHistory(savedTicket, requester);
 
         return convertToDto(savedTicket);
     }

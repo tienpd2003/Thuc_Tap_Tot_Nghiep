@@ -338,7 +338,7 @@ export default function ApproverHome() {
       }
     ];
 
-    return (
+  return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {statsData.map((stat, index) => (
           <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -362,7 +362,7 @@ export default function ApproverHome() {
       <div className="flex items-center gap-3 mb-4">
         <MdFilterList className="h-5 w-5 text-gray-600" />
         <h3 className="text-lg font-semibold text-gray-900">Bộ lọc</h3>
-      </div>
+        </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <FormControl fullWidth size="small">
@@ -437,7 +437,7 @@ export default function ApproverHome() {
         >
           Đặt lại
         </Button>
-      </div>
+                  </div>
 
       <div className="mt-4">
         <TextField
@@ -460,8 +460,8 @@ export default function ApproverHome() {
             )
           }}
         />
-      </div>
-    </div>
+                  </div>
+                </div>
   );
 
   const renderTicketTable = (tickets, showActions = true) => (
@@ -563,7 +563,7 @@ export default function ApproverHome() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Quản lý duyệt ticket</h1>
           <p className="text-gray-600 text-lg">Duyệt và quản lý các yêu cầu hỗ trợ</p>
-        </div>
+              </div>
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <MdSchedule className="h-4 w-4" />
           <span>Cập nhật cuối: {new Date().toLocaleString('vi-VN')}</span>
@@ -605,7 +605,7 @@ export default function ApproverHome() {
                  <>
                    <div className="mb-6">
                      {renderTicketTable(pendingTickets, true)}
-                   </div>
+            </div>
                   <div className="flex justify-center">
                     <Pagination
                       count={Math.ceil(pendingPagination.total / pendingPagination.pageSize)}
@@ -614,13 +614,13 @@ export default function ApproverHome() {
                       color="primary"
                       size="large"
                     />
-                  </div>
+          </div>
                 </>
               ) : (
                 <div className="text-center py-12">
                   <MdAssignment className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">Không có ticket nào cần duyệt</p>
-                </div>
+        </div>
               )}
             </>
           )}
@@ -644,18 +644,18 @@ export default function ApproverHome() {
                       color="primary"
                       size="large"
                     />
-                  </div>
+            </div>
                 </>
               ) : (
                 <div className="text-center py-12">
                   <MdCheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">Chưa có ticket nào được xử lý</p>
-                </div>
+          </div>
               )}
             </>
           )}
         </Box>
-      </div>
+        </div>
 
       {/* Action Modal */}
       <TicketActionModal

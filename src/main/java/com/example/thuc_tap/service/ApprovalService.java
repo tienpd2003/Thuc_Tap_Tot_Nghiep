@@ -37,6 +37,9 @@ public class ApprovalService {
 
     @Autowired
     private ApprovalWorkflowRepository approvalWorkflowRepository; // optional
+    
+    @Autowired
+    private TicketHistoryService ticketHistoryService;
 
     // --------------- Approve ----------------
     @Transactional
@@ -73,6 +76,28 @@ public class ApprovalService {
         audit.setCreatedAt(LocalDateTime.now());
         ticketApprovalRepository.save(audit);
 
+        // Lưu lịch sử duyệt
+        String fromStatus = ticket.getCurrentStatus().getName();
+        String toStatus = "IN_PROGRESS"; // Mặc định chuyển sang IN_PROGRESS
+        
+        // Kiểm tra xem có còn tầng workflow nào nữa không
+        boolean hasMoreSteps = hasMoreWorkflowSteps(ticket, task.getStepIndex());
+        
+        if (hasMoreSteps) {
+            // Còn tầng workflow nữa -> chuyển sang IN_PROGRESS
+            ticketStatusRepository.findByName("IN_PROGRESS").ifPresent(ticket::setCurrentStatus);
+            toStatus = "IN_PROGRESS";
+        } else {
+            // Đây là tầng cuối -> chuyển sang COMPLETED
+            ticketStatusRepository.findByName("COMPLETED").ifPresent(ticket::setCurrentStatus);
+            toStatus = "COMPLETED";
+        }
+        
+        ticketRepository.save(ticket);
+        
+        // Tạo lịch sử
+        ticketHistoryService.createApprovedHistory(ticket, task.getApprover(), note, fromStatus, toStatus);
+        
         // re-evaluate whether this step is complete, and advance workflow if needed
         boolean stepComplete = isStepComplete(ticket.getId(), task.getStepIndex());
         if (stepComplete) {
@@ -107,8 +132,12 @@ public class ApprovalService {
 
         // Business policy: mark ticket rejected and cancel other pending tasks in same step
         Ticket ticket = task.getTicket();
+        String fromStatus = ticket.getCurrentStatus().getName();
         ticketStatusRepository.findByName("REJECTED").ifPresent(ticket::setCurrentStatus);
         ticketRepository.save(ticket);
+        
+        // Tạo lịch sử từ chối
+        ticketHistoryService.createRejectedHistory(ticket, task.getApprover(), reason, fromStatus, "REJECTED");
 
         // Cancel other pending tasks in the same step (optional)
         List<ApprovalTask> sameStep = approvalTaskRepository.findByTicketIdOrderByStepIndex(ticket.getId());
@@ -201,6 +230,21 @@ public class ApprovalService {
         // fallback: mark ticket as final APPROVED
         ticketStatusRepository.findByName("APPROVED").ifPresent(ticket::setCurrentStatus);
         ticketRepository.save(ticket);
+    }
+    
+    /**
+     * Kiểm tra xem ticket có còn tầng workflow nào nữa không
+     */
+    private boolean hasMoreWorkflowSteps(Ticket ticket, Integer currentStepIndex) {
+        if (ticket.getFormTemplate() == null || ticket.getFormTemplate().getApprovalWorkflows() == null) {
+            return false;
+        }
+        
+        List<ApprovalWorkflow> workflows = ticket.getFormTemplate().getApprovalWorkflows();
+        
+        // Kiểm tra xem có tầng nào có stepOrder lớn hơn currentStepIndex không
+        return workflows.stream()
+                .anyMatch(workflow -> workflow.getStepOrder() > currentStepIndex);
     }
 
     /**
@@ -323,6 +367,88 @@ public class ApprovalService {
     }
 
     // --------------- New Methods for Approver Dashboard ----------------
+
+    /**
+     * Approve ticket directly from TicketApproval (for frontend integration)
+     */
+    @Transactional
+    public void approveTicketApproval(Long ticketApprovalId, String note, Long actingUserId) {
+        TicketApproval ticketApproval = ticketApprovalRepository.findById(ticketApprovalId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ticket approval not found"));
+
+        // Check if this approval belongs to the acting user
+        if (ticketApproval.getApprover() == null || !ticketApproval.getApprover().getId().equals(actingUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not allowed to approve this ticket");
+        }
+
+        // Check if already processed
+        if (!ApprovalAction.PENDING.equals(ticketApproval.getAction())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ticket already processed");
+        }
+
+        // Update the TicketApproval record
+        ticketApproval.setAction(ApprovalAction.APPROVE);
+        ticketApproval.setComments(note);
+        ticketApproval.setCreatedAt(LocalDateTime.now());
+        ticketApprovalRepository.save(ticketApproval);
+
+        // Update ticket status
+        Ticket ticket = ticketApproval.getTicket();
+        String fromStatus = ticket.getCurrentStatus().getName();
+        String toStatus;
+
+        // Check if there are more workflow steps
+        boolean hasMoreSteps = hasMoreWorkflowSteps(ticket, ticketApproval.getWorkflowStep().getStepOrder());
+        
+        if (hasMoreSteps) {
+            // More steps to go -> set to IN_PROGRESS
+            ticketStatusRepository.findByName("IN_PROGRESS").ifPresent(ticket::setCurrentStatus);
+            toStatus = "IN_PROGRESS";
+        } else {
+            // Final step -> set to COMPLETED
+            ticketStatusRepository.findByName("COMPLETED").ifPresent(ticket::setCurrentStatus);
+            toStatus = "COMPLETED";
+        }
+        
+        ticketRepository.save(ticket);
+        
+        // Create history
+        ticketHistoryService.createApprovedHistory(ticket, ticketApproval.getApprover(), note, fromStatus, toStatus);
+    }
+
+    /**
+     * Reject ticket directly from TicketApproval (for frontend integration)
+     */
+    @Transactional
+    public void rejectTicketApproval(Long ticketApprovalId, String reason, Long actingUserId) {
+        TicketApproval ticketApproval = ticketApprovalRepository.findById(ticketApprovalId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ticket approval not found"));
+
+        // Check if this approval belongs to the acting user
+        if (ticketApproval.getApprover() == null || !ticketApproval.getApprover().getId().equals(actingUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not allowed to reject this ticket");
+        }
+
+        // Check if already processed
+        if (!ApprovalAction.PENDING.equals(ticketApproval.getAction())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ticket already processed");
+        }
+
+        // Update the TicketApproval record
+        ticketApproval.setAction(ApprovalAction.REJECT);
+        ticketApproval.setComments(reason);
+        ticketApproval.setCreatedAt(LocalDateTime.now());
+        ticketApprovalRepository.save(ticketApproval);
+
+        // Update ticket status to REJECTED
+        Ticket ticket = ticketApproval.getTicket();
+        String fromStatus = ticket.getCurrentStatus().getName();
+        ticketStatusRepository.findByName("REJECTED").ifPresent(ticket::setCurrentStatus);
+        ticketRepository.save(ticket);
+        
+        // Create history
+        ticketHistoryService.createRejectedHistory(ticket, ticketApproval.getApprover(), reason, fromStatus, "REJECTED");
+    }
 
     /**
      * Get approval statistics for specific approver
