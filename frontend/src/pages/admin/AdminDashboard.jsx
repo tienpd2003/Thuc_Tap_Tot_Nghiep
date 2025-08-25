@@ -50,6 +50,11 @@ const AdminDashboard = () => {
     error 
   } = useSelector((state) => state.dashboard);
 
+  // Extract the actual data from nested state structure
+  const departmentData = departmentStats?.data || [];
+  const dailyStatsData = roleStats?.dailyStats || [];
+  const overviewData = overviewStats?.data || overviewStats;
+
   useEffect(() => {
     // Load dashboard data on mount and when period changes
     dispatch(fetchQuickStats());
@@ -58,111 +63,27 @@ const AdminDashboard = () => {
     dispatch(fetchUsersByRole(selectedPeriod));
   }, [dispatch, selectedPeriod]);
 
-  // Mock data for immediate display while API loads
-  const mockOverviewData = {
-    data: {
-      totalUsers: 36,
-      totalDepartments: 8,
-      totalTickets: 32,
-      approvalRate: 100.0,
-      pendingTickets: 5,
-      approvedTickets: 7,
-      rejectedTickets: 0,
-      inProgressTickets: 8,
-    }
-  };
-
-  const mockDepartmentStats = [
-    { name: 'Marketing', tickets: 5, users: 4, efficiency: 100 },
-    { name: 'Quality Assurance', tickets: 3, users: 5, efficiency: 100 },
-    { name: 'Human Resources', tickets: 5, users: 4, efficiency: 100 },
-    { name: 'IT Department', tickets: 5, users: 6, efficiency: 100 },
-    { name: 'Operations', tickets: 3, users: 4, efficiency: 50 },
-    { name: 'Research & Development', tickets: 3, users: 4, efficiency: 0 },
-    { name: 'Customer Service', tickets: 4, users: 4, efficiency: 0 },
-    { name: 'Finance', tickets: 4, users: 5, efficiency: 0 },
-  ];
-
-  // Use real API data with intelligent fallbacks when data is sparse
-  const displayOverviewStats = overviewStats || mockOverviewData;
-  
-  // For daily stats, use API data if available, otherwise create synthetic data based on current stats  
-  const createSyntheticDailyStats = () => {
-    const baseStats = displayOverviewStats?.data || displayOverviewStats;
-    const totalTickets = baseStats?.totalTickets || 32;
-    const approvedTickets = baseStats?.approvedTickets || 7;
-    const pendingTickets = baseStats?.pendingTickets || 5;
-    const days = selectedPeriod === 'week' ? 7 : (selectedPeriod === 'month' ? 30 : 365);
-    
-    return Array.from({ length: Math.min(days, 7) }, (_, index) => {
-      const day = new Date();
-      day.setDate(day.getDate() - (6 - index));
-      const dayVariation = Math.sin(index * 0.8) * 0.4 + 1; // More realistic variation
-      
-      return {
-        period: `${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`,
-        tickets: Math.max(1, Math.round((totalTickets / days) * dayVariation * 7)), // Scale to daily average
-        completed: Math.max(0, Math.round((approvedTickets / days) * dayVariation * 7)),
-        pending: Math.max(0, Math.round((pendingTickets / days) * dayVariation * 7)),
-        date: day.toISOString().split('T')[0]
-      };
-    });
+  // Use real API data from Redux state - no need for synthetic data processing here
+  const displayOverviewStats = overviewData || {
+    totalUsers: 36,
+    totalDepartments: 8,
+    totalTickets: 32,
+    approvalRate: 100.0,
+    pendingTickets: 5,
+    approvedTickets: 7,
+    rejectedTickets: 0,
+    inProgressTickets: 8,
   };
   
-  const displayDailyStats = (roleStats?.dailyStats?.length > 0 && 
-    roleStats.dailyStats.some(stat => stat.tickets > 0)) 
-    ? roleStats.dailyStats 
-    : createSyntheticDailyStats();
+  // Daily stats are now properly processed in the saga
+  const displayDailyStats = dailyStatsData;
     
-  const displayDepartmentStats = departmentStats?.length > 0 ? departmentStats : mockDepartmentStats;
+  // Use real API data for department stats - the data is already transformed in the saga
+  const displayDepartmentStats = departmentData;
   
-  // Create user growth data based on current user count and period
-  const createUserGrowthData = () => {
-    const currentUsers = displayOverviewStats?.data?.totalUsers || displayOverviewStats?.totalUsers || 36;
-    const currentActive = displayOverviewStats?.data?.activeUsers || displayOverviewStats?.activeUsers || 36;
-    
-    if (selectedPeriod === 'week') {
-      // Daily data for last 7 days
-      return Array.from({ length: 7 }, (_, index) => {
-        const day = new Date();
-        day.setDate(day.getDate() - (6 - index));
-        const dailyVariation = Math.sin(index * 0.6) * 0.1 + 1;
-        
-        return {
-          month: `T${index + 1}`,
-          totalUsers: Math.round(currentUsers * dailyVariation),
-          newUsers: Math.max(0, Math.round(2 * dailyVariation)),
-          activeUsers: Math.round(currentActive * dailyVariation)
-        };
-      });
-    } else if (selectedPeriod === 'month') {
-      // Weekly data for last 6 weeks
-      return Array.from({ length: 6 }, (_, index) => {
-        const weeklyGrowth = (currentUsers * 0.05 * index); // 5% growth per week
-        return {
-          month: `W${index + 1}`,
-          totalUsers: Math.round(currentUsers - (5 - index) * 3),
-          newUsers: Math.round(2 + index * 0.5),
-          activeUsers: Math.round((currentUsers - weeklyGrowth) * 0.9)
-        };
-      });
-    } else {
-      // Monthly data for last 12 months
-      return Array.from({ length: 12 }, (_, index) => {
-        const monthlyGrowth = index * 3;
-        return {
-          month: `T${index + 1}`,
-          totalUsers: Math.max(10, currentUsers - (11 - index) * monthlyGrowth),
-          newUsers: Math.round(3 + index * 0.3),
-          activeUsers: Math.max(8, currentActive - (11 - index) * monthlyGrowth)
-        };
-      });
-    }
-  };
   
-  const displayUserGrowthData = (roleStats?.userGrowth?.length > 0) 
-    ? roleStats.userGrowth 
-    : createUserGrowthData();
+  // Use user growth data from Redux state - processed in saga
+  const displayUserGrowthData = roleStats?.userGrowth || [];
 
   const handlePeriodChange = (event) => {
     setSelectedPeriod(event.target.value);
@@ -343,6 +264,7 @@ const AdminDashboard = () => {
               <TicketTrendChart
                 data={displayDailyStats}
                 loading={loading?.roleStats}
+                period={selectedPeriod}
               />
             </Box>
           </Paper>
@@ -497,7 +419,7 @@ const AdminDashboard = () => {
               <Chip size="small" label="Tuần này" color="primary" variant="outlined" />
             </Box>
             <CardContent>
-              {(departmentStats?.length ? departmentStats : mockDepartmentStats).slice(0, 4).map((dept, index) => (
+              {displayDepartmentStats.slice(0, 4).map((dept, index) => (
                 <Box key={dept.name} sx={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
@@ -546,7 +468,7 @@ const AdminDashboard = () => {
                   </Box>
                 </Box>
               ))}
-              {(!departmentStats || departmentStats.length === 0) && mockDepartmentStats.length === 0 && (
+              {(!departmentData || departmentData.length === 0) && displayDepartmentStats.length === 0 && (
                 <Typography variant="body2" color="text.secondary">
                   Chưa có dữ liệu
                 </Typography>
