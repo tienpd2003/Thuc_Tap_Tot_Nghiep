@@ -1,8 +1,12 @@
 package com.example.thuc_tap.dto.request;
 
+import lombok.Data;
+
+@Data
 public class ApproveRequest {
     private Long taskId;
     private String note;
+    private Long actingUserId;
     
     // Getters and Setters
     public Long getTaskId() {

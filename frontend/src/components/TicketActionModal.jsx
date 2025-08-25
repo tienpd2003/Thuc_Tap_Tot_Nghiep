@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { MdCheckCircle, MdCancel, MdInfo } from 'react-icons/md';
 import { getTicketApprovals, approveTicket, rejectTicket } from '../services/approvalService';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function TicketActionModal({ 
   visible, 
@@ -24,6 +25,9 @@ export default function TicketActionModal({
   action, // 'approve' or 'reject' or 'view'
   onSuccess 
 }) {
+
+  const { user } = useAuth();
+
   const [loading, setLoading] = useState(false);
   const [ticketDetails, setTicketDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -64,7 +68,7 @@ export default function TicketActionModal({
     setError('');
     try {
       if (action === 'approve') {
-        await approveTicket(ticketId, taskId, formData.note);
+        await approveTicket(ticketId, taskId, formData.note, user?.id);
       } else if (action === 'reject') {
         await rejectTicket(ticketId, taskId, formData.reason);
       }

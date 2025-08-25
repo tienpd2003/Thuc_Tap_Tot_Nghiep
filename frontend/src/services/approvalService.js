@@ -79,11 +79,12 @@ export const getTicketApprovals = async (ticketId) => {
 };
 
 // Approve a ticket
-export const approveTicket = async (ticketId, taskId, note = '') => {
+export const approveTicket = async (ticketId, taskId, note, actingUserId = '') => {
   try {
     const response = await apiClient.post(`/approvals/${ticketId}/approve`, {
       taskId,
-      note
+      note,
+      actingUserId
     });
     return response.data;
   } catch (error) {

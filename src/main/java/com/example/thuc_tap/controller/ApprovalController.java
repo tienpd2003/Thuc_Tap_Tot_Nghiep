@@ -72,9 +72,8 @@ public class ApprovalController {
 
     @PostMapping("/{ticketId}/approve")
     public ResponseEntity<Void> approve(@PathVariable Long ticketId, @RequestBody ApproveRequest req) {
-        Long actingUserId = getCurrentUserId();
         // Use the new method that works with TicketApproval
-        approvalService.approveTicketApproval(req.getTaskId(), req.getNote(), actingUserId);
+        approvalService.approveTicketApproval(req.getTaskId(), req.getNote(), req.getActingUserId());
         return ResponseEntity.ok().build();
     }
 
