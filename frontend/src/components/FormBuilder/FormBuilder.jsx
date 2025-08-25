@@ -102,6 +102,9 @@ const FormBuilder = ({ templateId }) => {
   const loadFormSchema = async (templateId) => {
     setIsLoading(true);
     try {
+      // Reset workflowSteps trước khi load mới
+      setWorkflowSteps([]);
+
       const response = await apiClient.get(`/form-templates/${templateId}`);
       console.log('Received data from backend:', response.data);
       
@@ -141,14 +144,13 @@ const FormBuilder = ({ templateId }) => {
         stepOrder: workflow.stepOrder,
         departmentId: workflow.departmentId,
         stepName: workflow.stepName
-        // approverId is not used in template definition, only when user submits
       }));
 
       console.log('Transformed form schema:', transformedFormSchema);
       console.log('Transformed workflow steps:', transformedWorkflowSteps);
 
       setFormSchema(transformedFormSchema);
-      setWorkflowSteps(transformedWorkflowSteps);
+      setWorkflowSteps(transformedWorkflowSteps); // Đảm bảo chỉ set 1 lần
       setTemplateName(response.data.name);
       setTemplateDescription(response.data.description);
       setFormData({});

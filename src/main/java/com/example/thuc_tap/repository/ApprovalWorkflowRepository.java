@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface ApprovalWorkflowRepository extends JpaRepository<ApprovalWorkflow, Long> {
     Optional<ApprovalWorkflow> findByFormTemplateId(Long formTemplateId);
+
+    void deleteByFormTemplateId(Long formTemplateId);
 }

@@ -20,6 +20,7 @@ public class FormTemplateDto {
     private String createdByName;
     private String createdAt;
     private String updatedAt;
+    private Integer dueInDays;
 //    private List<FormFieldDto> formFields;
     private FormSchema formSchema;
     private List<ApprovalWorkflowDto> approvalWorkflows;

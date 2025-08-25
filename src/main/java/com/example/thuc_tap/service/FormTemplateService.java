@@ -6,8 +6,8 @@ import com.example.thuc_tap.dto.response.FormTemplateFilterResponse;
 import com.example.thuc_tap.dto.response.FormTemplateResponse;
 import com.example.thuc_tap.entity.*;
 import com.example.thuc_tap.mapper.FormTemplateMapper;
+import com.example.thuc_tap.repository.ApprovalWorkflowRepository;
 import com.example.thuc_tap.repository.DepartmentRepository;
-import com.example.thuc_tap.repository.FieldTypeRepository;
 import com.example.thuc_tap.repository.FormTemplateRepository;
 import com.example.thuc_tap.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class FormTemplateService {
     private final FormTemplateRepository formTemplateRepository;
     private final FormTemplateMapper formTemplateMapper;
     private final UserRepository userRepository;
-    private final FieldTypeRepository fieldTypeRepository;
+    private final ApprovalWorkflowRepository approvalWorkflowRepository;
     private final DepartmentRepository departmentRepository;
 
     public Page<FormTemplateFilterResponse> getAllFormTemplates(FormTemplateFilterRequest filter) {
@@ -153,7 +153,9 @@ public class FormTemplateService {
         formTemplate.setCreatedBy(createdBy);
         formTemplate.setFormSchema(request.getFormSchema());
 
-        // Handle approval workflows
+        // Xóa hết các workflow cũ trước khi thêm mới
+        approvalWorkflowRepository.deleteByFormTemplateId(formTemplate.getId());
+
         List<ApprovalWorkflow> approvalWorkflows = request.getApprovalWorkflows().stream()
             .map(workflowDto -> {
                 ApprovalWorkflow approvalWorkflow = new ApprovalWorkflow();
@@ -167,10 +169,7 @@ public class FormTemplateService {
                     approvalWorkflow.setDepartment(null);
                 }
 
-                // Approver will be set later when user submits the form
-                // Template only defines the department and step structure
                 approvalWorkflow.setApprover(null);
-
                 approvalWorkflow.setStepName(workflowDto.getStepName());
                 approvalWorkflow.setFormTemplate(formTemplate);
 
