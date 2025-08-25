@@ -44,9 +44,6 @@ public class Department {
     
     // Relationships
     @JsonIgnore  // Prevent circular reference in JSON serialization
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_head_id", insertable = false, updatable = false)
-    private User departmentHead;
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL)
     private List<User> users;
     

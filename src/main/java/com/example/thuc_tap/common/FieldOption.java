@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 public class FieldOption {
     private String value;   // Giá trị thực tế
     private String label;   // Nhãn hiển thị
+    @Builder.Default
     private boolean disabled = false;
+    @Builder.Default
     private boolean selected = false;
 }

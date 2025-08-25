@@ -110,4 +110,7 @@ public class Ticket {
     
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL)
     private List<Notification> notifications;
+    
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL)
+    private List<TicketHistory> ticketHistory;
 }

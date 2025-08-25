@@ -22,6 +22,7 @@ public class TicketApprovalService {
     private final UserRepository userRepository;
     private final TicketStatusRepository ticketStatusRepository;
     private final TicketRepository ticketRepository;
+    private final TicketHistoryService ticketHistoryService;
     
     /**
      * Tạo approval tasks từ approval workflows của template
@@ -129,6 +130,11 @@ public class TicketApprovalService {
 
         r.setApprovals(approvals);
         r.setNextPending(nextPending);
+        
+        // Thêm lịch sử ticket
+        List<TicketHistory> history = ticketHistoryService.getTicketHistory(ticketId);
+        // TODO: Có thể thêm history vào response nếu cần
+        
         return r;
     }
     

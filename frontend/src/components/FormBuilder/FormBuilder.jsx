@@ -224,9 +224,9 @@ const FormBuilder = ({ templateId }) => {
           subFields: field.subFields || [],
           meta: field.meta || {}
         })),
-        layout: formSchema.layout,
-        permissions: {},
-        meta: {}
+        // layout: formSchema.layout,
+        // permissions: {},
+        // meta: {}
       };
 
       // Transform workflowSteps to match backend structure
