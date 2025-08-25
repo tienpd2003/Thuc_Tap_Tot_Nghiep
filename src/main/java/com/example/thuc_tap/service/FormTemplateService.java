@@ -75,6 +75,7 @@ public class FormTemplateService {
         formTemplate.setName(request.getName());
         formTemplate.setDescription(request.getDescription());
         formTemplate.setIsActive(request.getIsActive());
+        formTemplate.setDueInDays(request.getDueInDays());
 
         User createdBy = userRepository.findById(request.getCreatedById())
             .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getCreatedById()));
@@ -118,6 +119,57 @@ public class FormTemplateService {
                 } else {
                     approvalWorkflow.setDepartment(null);
                 }
+
+                // Approver will be set later when user submits the form
+                // Template only defines the department and step structure
+                approvalWorkflow.setApprover(null);
+
+                approvalWorkflow.setStepName(workflowDto.getStepName());
+                approvalWorkflow.setFormTemplate(formTemplate);
+
+                return approvalWorkflow;
+            })
+            .collect(Collectors.toList());
+        formTemplate.setApprovalWorkflows(approvalWorkflows);
+
+        FormTemplate savedFormTemplate = formTemplateRepository.save(formTemplate);
+
+        return formTemplateMapper.toResponse(savedFormTemplate);
+    }
+
+    @Transactional
+    public FormTemplateResponse updateFormTemplate(Long id, CreateFormTemplateRequest request) {
+        FormTemplate formTemplate = formTemplateRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("FormTemplate not found with id: " + id));
+
+        formTemplate.setName(request.getName());
+        formTemplate.setDescription(request.getDescription());
+        formTemplate.setIsActive(request.getIsActive());
+        formTemplate.setDueInDays(request.getDueInDays());
+
+        User createdBy = userRepository.findById(request.getCreatedById())
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getCreatedById()));
+
+        formTemplate.setCreatedBy(createdBy);
+        formTemplate.setFormSchema(request.getFormSchema());
+
+        // Handle approval workflows
+        List<ApprovalWorkflow> approvalWorkflows = request.getApprovalWorkflows().stream()
+            .map(workflowDto -> {
+                ApprovalWorkflow approvalWorkflow = new ApprovalWorkflow();
+                approvalWorkflow.setStepOrder(workflowDto.getStepOrder());
+
+                if (workflowDto.getDepartmentId() != null) {
+                    Department department = departmentRepository.findById(workflowDto.getDepartmentId())
+                        .orElseThrow(() -> new RuntimeException("Department not found with id: " + workflowDto.getDepartmentId()));
+                    approvalWorkflow.setDepartment(department);
+                } else {
+                    approvalWorkflow.setDepartment(null);
+                }
+
+                // Approver will be set later when user submits the form
+                // Template only defines the department and step structure
+                approvalWorkflow.setApprover(null);
 
                 approvalWorkflow.setStepName(workflowDto.getStepName());
                 approvalWorkflow.setFormTemplate(formTemplate);

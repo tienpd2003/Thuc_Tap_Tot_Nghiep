@@ -22,6 +22,9 @@ public class CreateFormTemplateRequest {
     private String description;
     
     private Boolean isActive = true;
+
+    // SLA: số ngày hạn xử lý kể từ khi tạo ticket
+    private Integer dueInDays;
     
     @NotNull(message = "Created by user ID is required")
     private Long createdById;

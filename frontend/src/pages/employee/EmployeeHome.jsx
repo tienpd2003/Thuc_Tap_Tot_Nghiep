@@ -1,27 +1,35 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   MdHeadsetMic, 
   MdAssignment, 
   MdCheckCircle, 
   MdSchedule,
-  MdAdd,
-  MdHistory,
-  MdPriorityHigh
+  MdVisibility
 } from "react-icons/md";
 import { useAuth } from '../../contexts/AuthContext';
-import { getEmployeeDashboard, getEmployeeTickets } from '../../services/employeeService';
+import { getEmployeeDashboard, getEmployeeTickets, deleteTicket } from '../../services/employeeService';
 
 export default function EmployeeHome() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [myTickets, setMyTickets] = useState([]);
+  const [pagination, setPagination] = useState({
+    currentPage: 0,
+    totalPages: 0,
+    totalElements: 0,
+    size: 10
+  });
   const [dashboardStats, setDashboardStats] = useState({
     totalTickets: 0,
-    inProgress: 0,
-    completed: 0,
-    pending: 0
+    pendingTickets: 0,
+    approvedTickets: 0,
+    rejectedTickets: 0,
+    inProgressTickets: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -29,7 +37,7 @@ export default function EmployeeHome() {
     }
   }, [user]);
 
-  const loadEmployeeData = async () => {
+  const loadEmployeeData = async (page = 0) => {
     try {
       setLoading(true);
       setError("");
@@ -37,11 +45,20 @@ export default function EmployeeHome() {
       // Load dashboard stats và recent tickets đồng thời
       const [statsResponse, ticketsResponse] = await Promise.all([
         getEmployeeDashboard(user.id),
-        getEmployeeTickets(user.id, { page: 0, size: 5, sortBy: 'createdAt', sortDir: 'desc' })
+        getEmployeeTickets(user.id, { page, size: pagination.size, sortBy: 'createdAt', sortDir: 'desc' })
       ]);
 
+      console.log('Dashboard Stats Response:', statsResponse);
+      console.log('Tickets Response:', ticketsResponse);
+      
       setDashboardStats(statsResponse);
       setMyTickets(ticketsResponse.content || []);
+      setPagination({
+        currentPage: ticketsResponse.number || 0,
+        totalPages: ticketsResponse.totalPages || 0,
+        totalElements: ticketsResponse.totalElements || 0,
+        size: ticketsResponse.size || 10
+      });
       
     } catch (err) {
       console.error('Error loading employee data:', err);
@@ -51,29 +68,34 @@ export default function EmployeeHome() {
     }
   };
 
-  const quickActions = [
-    {
-      title: "Create New Ticket",
-      description: "Create a new support request",
-      icon: <MdAdd className="h-6 w-6" />,
-      color: "bg-blue-500",
-      action: () => console.log("Create ticket")
-    },
-    {
-      title: "View My Tickets",
-      description: "Track your created tickets",
-      icon: <MdAssignment className="h-6 w-6" />,
-      color: "bg-green-500",
-      action: () => console.log("View tickets")
-    },
-    {
-      title: "Ticket History",
-      description: "View ticket history",
-      icon: <MdHistory className="h-6 w-6" />,
-      color: "bg-purple-500",
-      action: () => console.log("History")
+  // Removed quick actions as requested
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 0 && newPage < pagination.totalPages) {
+      loadEmployeeData(newPage);
     }
-  ];
+  };
+
+  const isPending = (t) => {
+    const s = (t?.statusName || t?.currentStatusName || t?.status || '').toString().toUpperCase();
+    return s === 'PENDING' || s === 'PENDING_APPROVAL';
+  };
+
+  const handleDelete = async (ticketId) => {
+    if (!ticketId || !user?.id) return;
+    if (!confirm('Bạn có chắc muốn xóa ticket này?')) return;
+    try {
+      setDeletingId(ticketId);
+      await deleteTicket(ticketId, user.id);
+      // refresh current page
+      await loadEmployeeData(pagination.currentPage);
+    } catch (e) {
+      console.error('Delete ticket failed', e);
+      alert('Xóa ticket thất bại. Vui lòng thử lại.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status?.toUpperCase()) {
@@ -155,21 +177,77 @@ export default function EmployeeHome() {
         </div>
       )}
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {quickActions.map((action, index) => (
-          <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={action.action}>
-            <div className="flex items-center gap-4">
-              <div className={`${action.color} p-4 rounded-xl text-white`}>
-                {action.icon}
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">{action.title}</h3>
-                <p className="text-gray-600 text-sm">{action.description}</p>
-              </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-2">Total Tickets</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {loading ? '...' : dashboardStats.totalTickets}
+              </p>
+            </div>
+            <div className="bg-blue-500 p-4 rounded-xl text-white">
+              <MdHeadsetMic className="h-6 w-6" />
             </div>
           </div>
-        ))}
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-2">In Progress</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {loading ? '...' : dashboardStats.inProgressTickets || 0}
+              </p>
+            </div>
+            <div className="bg-yellow-500 p-4 rounded-xl text-white">
+              <MdAssignment className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-2">Approved</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {loading ? '...' : dashboardStats.approvedTickets || 0}
+              </p>
+            </div>
+            <div className="bg-green-500 p-4 rounded-xl text-white">
+              <MdCheckCircle className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-2">Pending</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {loading ? '...' : dashboardStats.pendingTickets || 0}
+              </p>
+            </div>
+            <div className="bg-purple-500 p-4 rounded-xl text-white">
+              <MdSchedule className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-2">Rejected</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {loading ? '...' : dashboardStats.rejectedTickets || 0}
+              </p>
+            </div>
+            <div className="bg-red-500 p-4 rounded-xl text-white">
+              <MdSchedule className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* My Tickets */}
@@ -177,8 +255,12 @@ export default function EmployeeHome() {
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">My Tickets</h2>
-            <button className="bg-[#5e83ae] text-white px-6 py-2 rounded-lg hover:bg-[#4a6b8a] transition-colors text-sm font-medium">
-              Create New Ticket
+            <button 
+              onClick={() => navigate('/employee/tickets/create')}
+              className="bg-[#5e83ae] text-white px-4 py-2 rounded-lg hover:bg-[#4a6b8a] transition-colors text-sm font-medium flex items-center space-x-2"
+            >
+              <span>+</span>
+              <span>Create New Ticket</span>
             </button>
           </div>
         </div>
@@ -207,12 +289,15 @@ export default function EmployeeHome() {
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Time
                 </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center">
+                  <td colSpan="8" className="px-6 py-8 text-center">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#5e83ae]"></div>
                       <span className="ml-2 text-gray-500">Đang tải dữ liệu...</span>
@@ -221,7 +306,7 @@ export default function EmployeeHome() {
                 </tr>
               ) : myTickets.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                     Bạn chưa có ticket nào. Hãy tạo ticket đầu tiên!
                   </td>
                 </tr>
@@ -253,72 +338,84 @@ export default function EmployeeHome() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatRelativeTime(ticket.createdAt)}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => navigate(`/employee/tickets/${ticket.id}`)}
+                        className="text-blue-600 hover:text-blue-900 inline-flex items-center space-x-1 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors"
+                        title="View ticket details"
+                      >
+                        <MdVisibility className="h-4 w-4" />
+                        <span>View</span>
+                      </button>
+                      {isPending(ticket) && (
+                        <>
+                          <button
+                            onClick={() => navigate(`/employee/tickets/${ticket.id}?edit=1`)}
+                            className="text-gray-700 hover:text-gray-900 inline-flex items-center space-x-1 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+                            title="Edit ticket"
+                          >
+                            ✎ Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(ticket.id)}
+                            disabled={deletingId === ticket.id}
+                            className="text-red-600 hover:text-red-800 inline-flex items-center space-x-1 px-3 py-1 rounded-md hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Delete ticket"
+                          >
+                            {deletingId === ticket.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        {pagination.totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+              Showing {(pagination.currentPage * pagination.size) + 1} to {Math.min((pagination.currentPage + 1) * pagination.size, pagination.totalElements)} of {pagination.totalElements} tickets
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={pagination.currentPage === 0}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              
+              {/* Page Numbers */}
+              {[...Array(pagination.totalPages)].map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => handlePageChange(index)}
+                  className={`px-3 py-1 text-sm border rounded-md transition-colors ${
+                    index === pagination.currentPage
+                      ? 'bg-[#5e83ae] text-white border-[#5e83ae]'
+                      : 'border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+              
+              <button
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={pagination.currentPage >= pagination.totalPages - 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-2">Total Tickets</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {loading ? '...' : dashboardStats.totalTickets}
-              </p>
-            </div>
-            <div className="bg-blue-500 p-4 rounded-xl text-white">
-              <MdHeadsetMic className="h-6 w-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-2">In Progress</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {loading ? '...' : dashboardStats.inProgress}
-              </p>
-            </div>
-            <div className="bg-yellow-500 p-4 rounded-xl text-white">
-              <MdAssignment className="h-6 w-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-2">Completed</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {loading ? '...' : dashboardStats.completed}
-              </p>
-            </div>
-            <div className="bg-green-500 p-4 rounded-xl text-white">
-              <MdCheckCircle className="h-6 w-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-2">Pending</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {loading ? '...' : dashboardStats.pending}
-              </p>
-            </div>
-            <div className="bg-purple-500 p-4 rounded-xl text-white">
-              <MdSchedule className="h-6 w-6" />
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

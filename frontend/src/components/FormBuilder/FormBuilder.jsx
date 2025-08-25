@@ -6,11 +6,13 @@ import Toolbox from './Toolbox';
 import FieldConfigPanel from './FieldConfigPanel';
 import { MdPreview, MdCheckCircle, MdSave, MdClose } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { apiClient, departmentService } from '../../services';
 
 // Main Form Builder Component
 const FormBuilder = ({ templateId }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [formSchema, setFormSchema] = useState({
     fields: [],
@@ -30,9 +32,23 @@ const FormBuilder = ({ templateId }) => {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [templates, setTemplates] = useState([]);
-  const [selectedTemplate, setSelectedTemplate] = useState(templateId || '');
+  const [selectedTemplate, setSelectedTemplate] = useState(templateId === 'new' ? '' : templateId || '');
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
+  const [dueInDays, setDueInDays] = useState('');
+
+  // Function to reload templates
+  const reloadTemplates = async () => {
+    try {
+      const response = await apiClient.get('/form-templates');
+      console.log('🔄 Reloading templates:', response.data);
+      
+      const templatesData = response.data?.content || response.data || [];
+      setTemplates(Array.isArray(templatesData) ? templatesData : []);
+    } catch (error) {
+      console.error('Failed to reload templates:', error);
+    }
+  };
 
   // Load departments
   useEffect(() => {
@@ -60,9 +76,16 @@ const FormBuilder = ({ templateId }) => {
     const fetchTemplates = async () => {
       try {
         const response = await apiClient.get('/form-templates');
-        setTemplates(response.data);
+        console.log('📋 Templates response:', response.data);
+        
+        // Backend returns Page<FormTemplateFilterResponse>, need to get content array
+        const templatesData = response.data?.content || response.data || [];
+        setTemplates(Array.isArray(templatesData) ? templatesData : []);
+        
+        console.log('📋 Templates set to:', templatesData);
       } catch (error) {
         console.error('Failed to load form templates:', error);
+        setTemplates([]); // Set empty array on error
       }
     };
 
@@ -71,7 +94,7 @@ const FormBuilder = ({ templateId }) => {
 
   // Load form schema when template is selected
   useEffect(() => {
-    if (selectedTemplate) {
+    if (selectedTemplate && selectedTemplate !== 'new') {
       loadFormSchema(selectedTemplate);
     }
   }, [selectedTemplate]);
@@ -118,6 +141,7 @@ const FormBuilder = ({ templateId }) => {
         stepOrder: workflow.stepOrder,
         departmentId: workflow.departmentId,
         stepName: workflow.stepName
+        // approverId is not used in template definition, only when user submits
       }));
 
       console.log('Transformed form schema:', transformedFormSchema);
@@ -137,8 +161,27 @@ const FormBuilder = ({ templateId }) => {
   };
 
   const handleSaveForm = async () => {
+    // Confirm before saving
+    const confirmed = window.confirm('Are you sure you want to save this form template?');
+    if (!confirmed) {
+      return;
+    }
+    
     setIsLoading(true);
+    
     try {
+      // Test backend connection first
+      console.log('🔍 Testing backend connection...');
+      try {
+        const testResponse = await apiClient.get('/form-templates');
+        console.log('✅ Backend is reachable:', testResponse.status);
+      } catch (testError) {
+        console.warn('⚠️ Backend test failed:', testError.message);
+        if (testError.code === 'NETWORK_ERROR' || testError.message.includes('Network Error')) {
+          alert('❌ Cannot connect to backend server. Please check if the server is running.');
+          return;
+        }
+      }
       // Transform formSchema to match backend structure
       const transformedFormSchema = {
         version: 1,
@@ -191,33 +234,96 @@ const FormBuilder = ({ templateId }) => {
         stepOrder: step.stepOrder,
         departmentId: step.departmentId,
         stepName: step.stepName
+        // approverId will be set when user submits the form, not during template creation
       }));
 
       const formDataToSave = {
         name: templateName || `Form Template ${Date.now()}`,
         description: templateDescription || 'Form created from frontend',
         isActive: true,
-        createdById: 1, // This should be the actual user ID
+        createdById: user?.id || 1, // Use actual user ID from auth context
+        dueInDays: dueInDays ? Number(dueInDays) : null,
         formSchema: transformedFormSchema,
         approvalWorkflows: transformedWorkflows
       };
 
-      console.log('Sending data to backend:', formDataToSave);
+      console.log('🚀 Sending data to backend:', formDataToSave);
+      console.log('🎯 Backend URL:', apiClient.defaults.baseURL);
+      console.log('👤 User context:', user);
 
+      let response;
       if (selectedTemplate) {
         // Update existing template
-        await apiClient.put(`/form-templates/${selectedTemplate}`, formDataToSave);
+        console.log('📝 Updating template:', selectedTemplate);
+        response = await apiClient.put(`/form-templates/${selectedTemplate}`, formDataToSave);
+        console.log('✅ Update successful:', response);
       } else {
         // Create new template
-        const response = await apiClient.post('/form-templates', formDataToSave);
-        setSelectedTemplate(response.data.id);
-        setTemplates([...templates, response.data]);
+        console.log('➕ Creating new template...');
+        console.log('🔗 POST URL:', '/form-templates');
+        console.log('📤 Request payload:', JSON.stringify(formDataToSave, null, 2));
+        
+        response = await apiClient.post('/form-templates', formDataToSave);
+        console.log('✅ Create successful:', response);
+        console.log('📥 Response data:', response.data);
+        
+        if (response?.data?.id) {
+          setSelectedTemplate(response.data.id);
+          // Reload templates to get fresh data
+          await reloadTemplates();
+        }
       }
 
-      alert('Form schema saved successfully!');
+      // Show success message and navigate back
+      alert('✅ Form schema saved successfully!');
+      
+      // Navigate to form template management page
+      setTimeout(() => {
+        navigate('/admin/form-templates');
+      }, 500);
+        
     } catch (error) {
-      console.error('Failed to save form schema:', error);
-      alert('Failed to save form schema');
+      console.error('❌ Network/API Error:', error);
+      console.error('Error message:', error.message);
+      console.error('Error code:', error.code);
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      console.error('Request config:', error.config);
+      
+      // Handle specific error types
+      if (error.message === 'Network Error' || error.code === 'NETWORK_ERROR') {
+        alert('❌ Network Error: Cannot connect to server. Please check:\n' +
+              '1. Backend server is running on port 8080\n' +
+              '2. Internet connection is stable\n' +
+              '3. CORS is properly configured');
+      } else if (error.response?.status >= 200 && error.response?.status < 300) {
+        // Check if it's actually a successful response with weird error handling
+        console.log('✅ Actually successful despite error thrown');
+        alert('✅ Form saved successfully!');
+        
+        // Still try to update state if response contains data
+        if (error.response?.data?.id && !selectedTemplate) {
+          setSelectedTemplate(error.response.data.id);
+          await reloadTemplates();
+        }
+        
+        // Navigate back on success
+        setTimeout(() => {
+          navigate('/admin/form-templates');
+        }, 500);
+      } else if (error.response?.status === 404) {
+        alert('❌ API endpoint not found. Please check backend server.');
+      } else if (error.response?.status === 500) {
+        alert('❌ Server error. Please check backend logs.');
+      } else {
+        let errorMsg = 'Failed to save form schema';
+        if (error.response?.data?.message) {
+          errorMsg = error.response.data.message;
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+        alert(`❌ ${errorMsg}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -225,14 +331,29 @@ const FormBuilder = ({ templateId }) => {
 
   const handleSubmitForm = async () => {
     try {
-      await apiClient.post(`/form-templates/${selectedTemplate}/responses`, {
+      const response = await apiClient.post(`/form-templates/${selectedTemplate}/responses`, {
         formData: formData,
-        submittedBy: 1 // This should be the actual user ID
+        submittedBy: user?.id || 1 // Use actual user ID from auth context
       });
-      alert('Form submitted successfully!');
+      console.log('✅ Form submitted successfully:', response);
+      alert('✅ Form submitted successfully!');
     } catch (error) {
-      console.error('Failed to submit form:', error);
-      alert('Failed to submit form');
+      console.error('❌ Failed to submit form:', error);
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      
+      // Check if it's actually successful
+      if (error.response?.status >= 200 && error.response?.status < 300) {
+        alert('✅ Form submitted successfully!');
+      } else {
+        let errorMsg = 'Failed to submit form';
+        if (error.response?.data?.message) {
+          errorMsg = error.response.data.message;
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+        alert(`❌ ${errorMsg}`);
+      }
     }
   };
 
@@ -345,13 +466,25 @@ const FormBuilder = ({ templateId }) => {
               Submit Form
             </button>
           ) : (
-            <button
-              onClick={handleSaveForm}
-              className="flex items-center gap-2 border border-[#5e83ae] text-[#5e83ae] px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
-            >
-              <MdSave size={18} />
-              Save
-            </button>
+            <>
+              {/* Cancel Button */}
+              <button
+                onClick={() => navigate('/admin/form-templates')}
+                className="flex items-center gap-2 border border-gray-400 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                <MdClose size={18} />
+                Cancel
+              </button>
+              
+              {/* Save Button */}
+              <button
+                onClick={handleSaveForm}
+                className="flex items-center gap-2 border border-[#5e83ae] text-[#5e83ae] px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
+              >
+                <MdSave size={18} />
+                Save
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -467,6 +600,21 @@ const FormBuilder = ({ templateId }) => {
                     onChange={(e) => setTemplateDescription(e.target.value)}
                     disabled={isPreviewMode}
                     className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5e83ae]"
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label htmlFor="dueInDays" className="mb-1 font-semibold">
+                    Due in (days)
+                  </label>
+                  <input
+                    id="dueInDays"
+                    type="number"
+                    min="0"
+                    placeholder="e.g., 7"
+                    value={dueInDays}
+                    onChange={(e) => setDueInDays(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded min-w-[120px] focus:outline-none focus:ring-2 focus:ring-[#5e83ae]"
                   />
                 </div>
               </div>

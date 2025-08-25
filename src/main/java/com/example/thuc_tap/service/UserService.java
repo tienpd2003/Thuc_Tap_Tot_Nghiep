@@ -164,4 +164,13 @@ public class UserService {
         return users.stream().map(userMapper::toDto).toList(); // Sử dụng mapper thay vì duplicate conversion
     }
 
+    /**
+     * Lấy danh sách người có quyền duyệt trong phòng ban
+     */
+    public List<UserDto> getApproversByDepartment(Long departmentId) {
+        // Lấy users có role APPROVER trong department đó
+        List<User> approvers = userRepository.findByDepartmentIdAndRoleName(departmentId, "APPROVER");
+        return approvers.stream().map(userMapper::toDto).toList();
+    }
+
 }

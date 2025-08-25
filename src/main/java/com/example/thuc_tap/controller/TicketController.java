@@ -1,22 +1,18 @@
 package com.example.thuc_tap.controller;
 
 import com.example.thuc_tap.dto.TicketDto;
-import com.example.thuc_tap.dto.TicketFormDataDto;
+import com.example.thuc_tap.dto.request.CreateTicketFromTemplateRequest;
 import com.example.thuc_tap.service.TicketService;
-import com.example.thuc_tap.service.TicketFormDataService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -31,102 +27,70 @@ public class TicketController {
     @Autowired
     private TicketService ticketService;
 
-    @Autowired
-    private TicketFormDataService ticketFormDataService;
+    // Deprecated: form-data APIs removed since ticket stores JSON form_data directly
+
+    // Removed legacy createTicket(TicketDto) since we now create from template JSON map
 
     /**
-     * Tạo ticket mới
+     * Tạo ticket từ form template với form data và workflow approvers
      */
     @Operation(
-        summary = "Tạo ticket mới",
-        description = "Tạo một ticket mới với form template và approval workflow",
+        summary = "Tạo ticket từ form template",
+        description = "Tạo ticket dựa trên form template. Dữ liệu form gửi theo dạng JSON map: {\"fieldKey\": value}.",
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Thông tin ticket cần tạo",
+            description = "Thông tin tạo ticket từ template",
             required = true,
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = TicketDto.class),
+                schema = @Schema(implementation = CreateTicketFromTemplateRequest.class),
                 examples = {
                     @ExampleObject(
-                        name = "Leave Request Example",
-                        summary = "Ví dụ đơn xin nghỉ phép",
-                        description = "Một ví dụ hoàn chỉnh về đơn xin nghỉ phép với form data",
+                        name = "Leave Request (Map-based formData)",
+                        summary = "Đơn xin nghỉ phép",
                         value = """
-                            {
-                              "title": "Yêu cầu nghỉ phép",
-                              "description": "Tôi muốn xin nghỉ phép từ ngày 15/01 đến 20/01 để du lịch với gia đình",
-                              "requesterId": 1,
-                              "departmentId": 1,
-                              "formTemplateId": 2,
-                              "priorityId": 2,
-                              "dueDate": "2024-01-10T17:00:00",
-                              "formData": [
-                                {
-                                  "fieldId": 1,
-                                  "fieldName": "start_date",
-                                  "fieldLabel": "Ngày bắt đầu",
-                                  "fieldValue": "2024-01-15",
-                                  "fieldType": "DATE"
-                                },
-                                {
-                                  "fieldId": 2,
-                                  "fieldName": "end_date", 
-                                  "fieldLabel": "Ngày kết thúc",
-                                  "fieldValue": "2024-01-20",
-                                  "fieldType": "DATE"
-                                },
-                                {
-                                  "fieldId": 3,
-                                  "fieldName": "reason",
-                                  "fieldLabel": "Lý do nghỉ phép",
-                                  "fieldValue": "Du lịch với gia đình",
-                                  "fieldType": "TEXTAREA"
-                                }
-                              ]
-                            }
-                            """
+                        {
+                          "templateId": 1,
+                          "requesterId": 5,
+                          "title": "Xin nghỉ phép 5 ngày",
+                          "description": "Lý do cá nhân",
+                          "formData": {
+                            "reason": "Việc gia đình",
+                            "fromDate": "2025-09-01",
+                            "toDate": "2025-09-05"
+                          },
+                          "workflowApprovers": {
+                            "10": "any",
+                            "11": "23"
+                          }
+                        }
+                        """
                     ),
                     @ExampleObject(
-                        name = "Equipment Request Example",
-                        summary = "Ví dụ đơn xin thiết bị",
-                        description = "Ví dụ về đơn xin cấp thiết bị văn phòng",
+                        name = "Equipment Request (Map-based formData)",
+                        summary = "Yêu cầu cấp thiết bị",
                         value = """
-                            {
-                              "title": "Yêu cầu cấp laptop mới",
-                              "description": "Cần laptop mới để làm việc",
-                              "requesterId": 1,
-                              "departmentId": 7,
-                              "formTemplateId": 3,
-                              "priorityId": 1,
-                              "dueDate": "2024-01-15T17:00:00",
-                              "formData": [
-                                {
-                                  "fieldId": 4,
-                                  "fieldName": "equipment_type",
-                                  "fieldLabel": "Loại thiết bị",
-                                  "fieldValue": "laptop",
-                                  "fieldType": "SELECT"
-                                },
-                                {
-                                  "fieldId": 5,
-                                  "fieldName": "specifications",
-                                  "fieldLabel": "Thông số kỹ thuật",
-                                  "fieldValue": "Core i7, 16GB RAM, 512GB SSD",
-                                  "fieldType": "TEXTAREA"
-                                }
-                              ]
-                            }
-                            """
+                        {
+                          "templateId": 3,
+                          "requesterId": 5,
+                          "title": "Cấp laptop mới",
+                          "formData": {
+                            "equipment_type": "laptop",
+                            "specifications": "Core i7, 16GB RAM, 512GB SSD"
+                          },
+                          "workflowApprovers": {
+                            "21": "any",
+                            "22": "any"
+                          }
+                        }
+                        """
                     )
                 }
             )
         )
     )
-    
-    
-    @PostMapping
-    public ResponseEntity<TicketDto> createTicket(@Valid @RequestBody TicketDto ticketDto) {
-        TicketDto createdTicket = ticketService.createTicket(ticketDto);
+    @PostMapping("/from-template")
+    public ResponseEntity<TicketDto> createTicketFromTemplate(@Valid @RequestBody CreateTicketFromTemplateRequest request) {
+        TicketDto createdTicket = ticketService.createTicketFromTemplate(request);
         return ResponseEntity.ok(createdTicket);
     }
 
@@ -167,36 +131,7 @@ public class TicketController {
         return deleted ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
 
-    /**
-     * Lấy dữ liệu form của ticket
-     */
-    @GetMapping("/{ticketId}/form-data")
-    public ResponseEntity<List<TicketFormDataDto>> getTicketFormData(@PathVariable Long ticketId) {
-        List<TicketFormDataDto> formData = ticketFormDataService.getTicketFormData(ticketId);
-        return ResponseEntity.ok(formData);
-    }
+    
 
-    /**
-     * Lưu dữ liệu form của ticket
-     */
-    @PostMapping("/{ticketId}/form-data")
-    public ResponseEntity<List<TicketFormDataDto>> saveTicketFormData(
-            @PathVariable Long ticketId,
-            @RequestBody List<TicketFormDataDto> formDataList) {
-        
-        List<TicketFormDataDto> savedFormData = ticketFormDataService.saveTicketFormData(ticketId, formDataList);
-        return ResponseEntity.ok(savedFormData);
-    }
-
-    /**
-     * Cập nhật dữ liệu form của ticket
-     */
-    @PutMapping("/{ticketId}/form-data")
-    public ResponseEntity<List<TicketFormDataDto>> updateTicketFormData(
-            @PathVariable Long ticketId,
-            @RequestBody List<TicketFormDataDto> formDataList) {
-        
-        List<TicketFormDataDto> updatedFormData = ticketFormDataService.updateTicketFormData(ticketId, formDataList);
-        return ResponseEntity.ok(updatedFormData);
-    }
+    // Deprecated form-data endpoints removed: ticket now stores form_data JSON directly
 }

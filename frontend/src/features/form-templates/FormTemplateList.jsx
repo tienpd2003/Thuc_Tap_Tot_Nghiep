@@ -2,14 +2,16 @@ import React, { useEffect, useState } from "react";
 import { FiSearch, FiFilter, FiEye, FiEdit, FiTrash2, FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight, FiChevronDown, FiChevronUp, FiX } from "react-icons/fi";
 import { Popover } from '@mui/material';
 import { getAllFormTemplates } from "../../services/formTemplateService";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { departmentService, userService } from "../../services";
 
 const FormTemplateList = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [admins, setAdmins] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, template: null });
   const [filters, setFilters] = useState({
     keyword: "",
     isActive: "",
@@ -569,12 +571,14 @@ const FormTemplateList = () => {
                             <FiEye className="h-4 w-4" />
                           </Link>
                           <button
+                            onClick={() => navigate(`/admin/form-templates/${item.id}`)}
                             className="text-green-600 hover:text-green-900 p-2 rounded-lg hover:bg-green-50 transition-colors"
                             title="Edit"
                           >
                             <FiEdit className="h-4 w-4" />
                           </button>
                           <button
+                            onClick={() => setDeleteDialog({ open: true, template: item })}
                             className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors"
                             title="Delete"
                           >
@@ -695,6 +699,39 @@ const FormTemplateList = () => {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteDialog.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Confirm Delete
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "{deleteDialog.template?.name}"? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setDeleteDialog({ open: false, template: null })}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  // TODO: Implement delete functionality
+                  console.log('Delete template:', deleteDialog.template?.id);
+                  setDeleteDialog({ open: false, template: null });
+                  alert('Delete functionality will be implemented soon!');
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

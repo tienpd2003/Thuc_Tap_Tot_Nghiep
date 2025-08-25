@@ -84,7 +84,9 @@ public class TicketApprovalService {
         r.setTicketId(ticket.getId());
         r.setTicketCode(ticket.getTicketCode());
         r.setTitle(ticket.getTitle());
+        r.setDescription(ticket.getDescription());
         r.setCreatedAt(ticket.getCreatedAt());
+        r.setDueDate(ticket.getDueDate());
 
         // requester: many schemas name the relationship 'requester' (see your tickets table requester_id)
         try {
@@ -98,6 +100,30 @@ public class TicketApprovalService {
 
         if (ticket.getCurrentStatus() != null) {
             try { r.setCurrentStatus(ticket.getCurrentStatus().getName()); }
+            catch (Exception ignored) {}
+        }
+
+        // Set department name
+        if (ticket.getDepartment() != null) {
+            try { r.setDepartmentName(ticket.getDepartment().getName()); }
+            catch (Exception ignored) {}
+        }
+
+        // Set form template name
+        if (ticket.getFormTemplate() != null) {
+            try { r.setFormTemplateName(ticket.getFormTemplate().getName()); }
+            catch (Exception ignored) {}
+        }
+
+        // Set priority name
+        if (ticket.getPriority() != null) {
+            try { r.setPriorityName(ticket.getPriority().getName()); }
+            catch (Exception ignored) {}
+        }
+
+        // Set form data
+        if (ticket.getFormData() != null) {
+            try { r.setFormData(ticket.getFormData()); }
             catch (Exception ignored) {}
         }
 
@@ -139,9 +165,20 @@ public class TicketApprovalService {
         dto.setTicketId(approval.getTicket().getId());
         dto.setStepOrder(approval.getWorkflowStep().getStepOrder());
         dto.setStepName(approval.getWorkflowStep().getStepName());
+        // Workflow step info
+        if (approval.getWorkflowStep() != null) {
+            dto.setWorkflowStepId(approval.getWorkflowStep().getId());
+            dto.setWorkflowStepName(approval.getWorkflowStep().getStepName());
+        }
         dto.setAction(approval.getAction().name());
         dto.setComments(approval.getComments());
         dto.setCreatedAt(approval.getCreatedAt());
+
+        // Status info
+        if (approval.getStatus() != null) {
+            try { dto.setStatusId(approval.getStatus().getId()); } catch (Exception ignored) {}
+            try { dto.setStatusName(approval.getStatus().getName()); } catch (Exception ignored) {}
+        }
         
         if (approval.getApprover() != null) {
             dto.setApproverId(approval.getApprover().getId());
@@ -151,6 +188,11 @@ public class TicketApprovalService {
         if (approval.getWorkflowStep().getDepartment() != null) {
             dto.setDepartmentId(approval.getWorkflowStep().getDepartment().getId());
             dto.setDepartmentName(approval.getWorkflowStep().getDepartment().getName());
+        }
+        
+        if (approval.getForwardedToDepartment() != null) {
+            dto.setForwardedToDepartmentId(approval.getForwardedToDepartment().getId());
+            dto.setForwardedToDepartmentName(approval.getForwardedToDepartment().getName());
         }
         
         return dto;

@@ -146,6 +146,15 @@ const WorkflowConfigPanel = ({ step, onSave, onCancel, departments = [] }) => {
             </div>
           </Popover>
         </div>
+
+        {/* Info text về việc chọn người duyệt */}
+        {config.departmentId && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="text-sm text-blue-800">
+              <strong>Lưu ý:</strong> Người dùng sẽ chọn người duyệt cụ thể từ phòng ban này khi submit form.
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

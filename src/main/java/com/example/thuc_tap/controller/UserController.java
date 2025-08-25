@@ -63,4 +63,10 @@ public class UserController {
         List<UserDto> users = userService.findUsersByName(name);
         return ResponseEntity.ok(users);
     }
+
+    @GetMapping("/department/{departmentId}/approvers")
+    public ResponseEntity<List<UserDto>> getApproversByDepartment(@PathVariable Long departmentId) {
+        List<UserDto> approvers = userService.getApproversByDepartment(departmentId);
+        return ResponseEntity.ok(approvers);
+    }
 }

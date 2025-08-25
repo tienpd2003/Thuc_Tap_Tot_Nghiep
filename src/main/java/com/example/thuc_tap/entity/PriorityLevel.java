@@ -1,6 +1,7 @@
 package com.example.thuc_tap.entity;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -26,5 +27,6 @@ public class PriorityLevel {
     
     // Relationships
     @OneToMany(mappedBy = "priority", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Ticket> tickets;
 }
