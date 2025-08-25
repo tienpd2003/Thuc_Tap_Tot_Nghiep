@@ -13,12 +13,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApprovalWorkflowDto {
 
+    private Long id; // ID of the workflow step
+    
     @NotNull(message = "Step order is required")
     @Positive(message = "Step order must be positive")
     private Integer stepOrder;
     
     // departmentId có thể null cho trường hợp "Trưởng phòng duyệt"
     private Long departmentId;
+    private String departmentName; // For UI display
+    
+    // approverId có thể null - nghĩa là bất kỳ ai có quyền duyệt trong phòng ban
+    private Long approverId;
     
     @NotBlank(message = "Step name is required")
     @Size(max = 100, message = "Step name must not exceed 100 characters")

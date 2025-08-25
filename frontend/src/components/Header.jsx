@@ -1,9 +1,10 @@
 import { MdHeadsetMic, MdNotifications, MdAccountCircle, MdLogout, MdAssignment, MdHome, MdHistory, MdApproval, MdOutlineNotifications, MdMenu } from "react-icons/md";
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Popover } from '@mui/material';
 
 export default function Header({ role = "employee", onMenuClick, user, onLogout }) {
+	const navigate = useNavigate();
 
 	const employeeNavItems = [
 		{ icon: MdHome, label: "Dashboard", to: "/employee" },
@@ -67,7 +68,7 @@ export default function Header({ role = "employee", onMenuClick, user, onLogout 
 						<MdMenu className="h-6 w-6 text-gray-600" />
 					</button>
 
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/${role}`)}>
 						<div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg">
 							<MdHeadsetMic className="h-6 w-6 text-white" />
 						</div>

@@ -152,4 +152,10 @@ public class FormTemplateController {
         FormTemplateResponse formTemplate = formTemplateService.createFormTemplate(request);
         return ResponseEntity.ok(formTemplate);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<FormTemplateResponse> updateFormTemplate(@PathVariable Long id, @RequestBody CreateFormTemplateRequest request) {
+        FormTemplateResponse formTemplate = formTemplateService.updateFormTemplate(id, request);
+        return ResponseEntity.ok(formTemplate);
+    }
 }

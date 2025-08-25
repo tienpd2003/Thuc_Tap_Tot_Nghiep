@@ -6,6 +6,7 @@ import com.example.thuc_tap.dto.request.ForwardRequest;
 import com.example.thuc_tap.dto.response.TicketApprovalsResponse;
 import com.example.thuc_tap.entity.ApprovalTask;
 import com.example.thuc_tap.entity.Ticket;
+import com.example.thuc_tap.entity.TicketApproval;
 import com.example.thuc_tap.service.ApprovalService;
 import com.example.thuc_tap.repository.ApprovalTaskRepository;
 import com.example.thuc_tap.service.TicketApprovalService;
@@ -30,19 +31,40 @@ public class ApprovalController {
         this.ticketApprovalService = ticketApprovalService;
     }
 
+    // Statistics for approver dashboard
+    @GetMapping("/stats")
+    public ResponseEntity<?> getApprovalStats(@RequestParam(required = true) Long approverId) {
+        return ResponseEntity.ok(approvalService.getApprovalStats(approverId));
+    }
+
     // Pending queue with filters (pageable)
     @GetMapping("/pending")
-    public ResponseEntity<Page<ApprovalTask>> pending(@RequestParam(required=false) Long departmentId,
-                                                      @RequestParam(required=false) Long type,
-                                                      @RequestParam(required=false) Long priority,
+    public ResponseEntity<Page<TicketApproval>> pending(@RequestParam(required=true) Long approverId,
+                                                      @RequestParam(required=false) Long departmentId,
+                                                      @RequestParam(required=false) Long formTemplateId,
+                                                      @RequestParam(required=false) String priority,
+                                                      @RequestParam(required=false) String employeeCode,
                                                       @RequestParam(required=false) String q,
                                                       Pageable pageable) {
-        Page<ApprovalTask> page = approvalTaskRepository.findPendingFiltered(departmentId, type, priority, q, pageable);
+        Page<TicketApproval> page = approvalService.getPendingTicketsForApprover(approverId, departmentId, formTemplateId, priority, employeeCode, q, pageable);
+        return ResponseEntity.ok(page);
+    }
+
+    // Processed tickets by approver
+    @GetMapping("/processed")
+    public ResponseEntity<Page<TicketApproval>> processed(@RequestParam(required=true) Long approverId,
+                                                        @RequestParam(required=false) Long departmentId,
+                                                        @RequestParam(required=false) Long formTemplateId,
+                                                        @RequestParam(required=false) String priority,
+                                                        @RequestParam(required=false) String employeeCode,
+                                                        @RequestParam(required=false) String q,
+                                                        Pageable pageable) {
+        Page<TicketApproval> page = approvalService.getProcessedTicketsForApprover(approverId, departmentId, formTemplateId, priority, employeeCode, q, pageable);
         return ResponseEntity.ok(page);
     }
 
     // Ticket details + approvals history — you can implement a DTO wrapper
-    @GetMapping("/{ticketId}")
+    @GetMapping("/{ticketId}/detail")
     public ResponseEntity<TicketApprovalsResponse> ticketApprovals(@PathVariable Long ticketId) {
         TicketApprovalsResponse payload = ticketApprovalService.getTicketApprovalsPayload(ticketId);
         return ResponseEntity.ok(payload);
@@ -70,8 +92,8 @@ public class ApprovalController {
     }
 
     private Long getCurrentUserId() {
-        // DEV: return a test user id (e.g. 1L)
+        // DEV: return a test user id - Nguyễn Thị Hoa
         // PROD: replace with SecurityContextHolder retrieval
-        return 1L;
+        return 4L; // TODO: Get from SecurityContextHolder
     }
 }

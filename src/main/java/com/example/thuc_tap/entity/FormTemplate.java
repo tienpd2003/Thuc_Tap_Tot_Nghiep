@@ -32,6 +32,10 @@ public class FormTemplate {
     
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    // SLA: số ngày tới hạn từ lúc tạo ticket (admin cấu hình trên template)
+    @Column(name = "due_in_days")
+    private Integer dueInDays;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)

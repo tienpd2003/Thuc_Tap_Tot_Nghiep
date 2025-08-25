@@ -46,6 +46,11 @@ export const userService = {
   getUsersByRole: (roleId) => {
     return apiClient.get(API_ENDPOINTS.ROLES_USERS(roleId));
   },
+
+  // Get approvers by department
+  getApproversByDepartment: (departmentId) => {
+    return apiClient.get(`/users/department/${departmentId}/approvers`);
+  },
 };
 
 export default userService;

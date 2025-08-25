@@ -18,13 +18,39 @@ public interface FormTemplateMapper {
     @Mapping(source = ".", target = "createdByName", qualifiedByName = "mapCreatedByName")
     @Mapping(source = ".", target = "createdAt", qualifiedByName = "mapCreatedAt")
     @Mapping(source = ".", target = "updatedAt", qualifiedByName = "mapUpdatedAt")
+    @Mapping(source = "dueInDays", target = "dueInDays")
     FormTemplateResponse toResponse(FormTemplate formTemplate);
 
-    @Mapping(source = "fieldType.id", target = "fieldTypeId")
-    @Mapping(source = "fieldType.name", target = "fieldTypeName")
-    FormFieldDto toFormFieldDto(FormField formField);
+    // @Mapping(source = "fieldType.id", target = "fieldTypeId")
+    // @Mapping(source = "fieldType.name", target = "fieldTypeName")
+    // FormFieldDto toFormFieldDto(FormField formField);
+
+    // Manual implementation as fallback
+    default FormFieldDto toFormFieldDtoManual(FormField formField) {
+        if (formField == null) {
+            return null;
+        }
+        
+        FormFieldDto dto = new FormFieldDto();
+        dto.setFieldName(formField.getFieldName());
+        dto.setFieldLabel(formField.getFieldLabel());
+        dto.setIsRequired(formField.getIsRequired());
+        dto.setFieldOrder(formField.getFieldOrder());
+        dto.setReadOnly(formField.getReadOnly());
+        dto.setFieldOptions(formField.getFieldOptions());
+        dto.setValidationRules(formField.getValidationRules());
+        
+        if (formField.getFieldType() != null) {
+            dto.setFieldTypeId(formField.getFieldType().getId());
+            dto.setFieldTypeName(formField.getFieldType().getName());
+        }
+        
+        return dto;
+    }
 
     @Mapping(source = "department.id", target = "departmentId")
+    @Mapping(source = "department.name", target = "departmentName")
+    @Mapping(source = "approver.id", target = "approverId")
     ApprovalWorkflowDto toApprovalWorkflowDto(ApprovalWorkflow approvalWorkflow);
 
     @Named("mapCreatedByName")

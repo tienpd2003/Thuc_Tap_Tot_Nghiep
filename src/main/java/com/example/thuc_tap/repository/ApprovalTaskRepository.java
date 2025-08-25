@@ -31,4 +31,60 @@ public interface ApprovalTaskRepository extends JpaRepository<ApprovalTask, Long
                                            @Param("priority") Long priority,
                                            @Param("q") String q,
                                            Pageable pageable);
+
+    // Statistics queries for approver - count tickets that this approver can handle
+    @Query("SELECT COUNT(DISTINCT at.ticket.id) FROM ApprovalTask at " +
+            "WHERE at.status = com.example.thuc_tap.entity.ApprovalTaskStatus.PENDING " +
+            "AND (at.approver.id = :approverId OR " +
+            "(at.approver IS NULL AND at.ticket.department IN " +
+            "(SELECT u.department FROM User u WHERE u.id = :approverId)))")
+    Long countPendingForApprover(@Param("approverId") Long approverId);
+
+    @Query("SELECT COUNT(at) FROM ApprovalTask at " +
+            "WHERE at.status IN (com.example.thuc_tap.entity.ApprovalTaskStatus.APPROVED, " +
+            "com.example.thuc_tap.entity.ApprovalTaskStatus.REJECTED) " +
+            "AND at.approver.id = :approverId")
+    Long countProcessedByApprover(@Param("approverId") Long approverId);
+
+    @Query("SELECT COUNT(at) FROM ApprovalTask at " +
+            "WHERE at.status = com.example.thuc_tap.entity.ApprovalTaskStatus.APPROVED " +
+            "AND at.approver.id = :approverId")
+    Long countApprovedByApprover(@Param("approverId") Long approverId);
+
+    @Query("SELECT COUNT(at) FROM ApprovalTask at " +
+            "WHERE at.status = com.example.thuc_tap.entity.ApprovalTaskStatus.REJECTED " +
+            "AND at.approver.id = :approverId")
+    Long countRejectedByApprover(@Param("approverId") Long approverId);
+
+    // Pending tickets for specific approver with filters
+    @Query("SELECT DISTINCT at FROM ApprovalTask at " +
+            "LEFT JOIN FETCH at.ticket t " +
+            "LEFT JOIN FETCH t.requester " +
+            "LEFT JOIN FETCH t.department " +
+            "LEFT JOIN FETCH t.priority " +
+            "LEFT JOIN FETCH t.formTemplate " +
+            "WHERE at.status = com.example.thuc_tap.entity.ApprovalTaskStatus.PENDING " +
+            "AND (at.approver.id = :approverId OR " +
+            "(at.approver IS NULL AND t.department IN " +
+            "(SELECT u.department FROM User u WHERE u.id = :approverId)))")
+    Page<ApprovalTask> findPendingForApprover(@Param("approverId") Long approverId,
+                                            @Param("departmentId") Long departmentId,
+                                            @Param("formTemplateId") Long formTemplateId,
+                                            @Param("priority") String priority,
+                                            @Param("employeeCode") String employeeCode,
+                                            @Param("q") String q,
+                                            Pageable pageable);
+
+    // Processed tickets by specific approver with filters - simplified
+    @Query("SELECT at FROM ApprovalTask at LEFT JOIN FETCH at.ticket t LEFT JOIN FETCH t.requester LEFT JOIN FETCH t.department LEFT JOIN FETCH t.priority LEFT JOIN FETCH t.formTemplate " +
+            "WHERE at.status IN (com.example.thuc_tap.entity.ApprovalTaskStatus.APPROVED, " +
+            "com.example.thuc_tap.entity.ApprovalTaskStatus.REJECTED) " +
+            "AND at.approver.id = :approverId")
+    Page<ApprovalTask> findProcessedByApprover(@Param("approverId") Long approverId,
+                                             @Param("departmentId") Long departmentId,
+                                             @Param("formTemplateId") Long formTemplateId,
+                                             @Param("priority") String priority,
+                                             @Param("employeeCode") String employeeCode,
+                                             @Param("q") String q,
+                                             Pageable pageable);
 }

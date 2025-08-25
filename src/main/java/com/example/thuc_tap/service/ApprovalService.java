@@ -1,8 +1,11 @@
 package com.example.thuc_tap.service;
 
+import com.example.thuc_tap.dto.response.ApprovalStatsDto;
 import com.example.thuc_tap.entity.*;
 import com.example.thuc_tap.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -197,5 +201,160 @@ public class ApprovalService {
         // fallback: mark ticket as final APPROVED
         ticketStatusRepository.findByName("APPROVED").ifPresent(ticket::setCurrentStatus);
         ticketRepository.save(ticket);
+    }
+
+    /**
+     * Create approval tasks with specific approvers from workflow
+     */
+    @Transactional
+    public void createApprovalTasksWithSpecificApprovers(Ticket ticket, Map<Long, String> workflowApprovers) {
+        if (ticket.getFormTemplate() == null || ticket.getFormTemplate().getApprovalWorkflows().isEmpty()) {
+            return;
+        }
+
+        List<ApprovalWorkflow> workflows = ticket.getFormTemplate().getApprovalWorkflows();
+        
+        for (ApprovalWorkflow workflow : workflows) {
+            String approverValue = workflowApprovers.get(workflow.getId());
+            
+            ApprovalTask task = new ApprovalTask();
+            task.setTicket(ticket);
+            task.setStepIndex(workflow.getStepOrder()); // Use stepIndex instead of stepOrder
+            task.setWorkflowStep(workflow); // Link to workflow step
+            task.setStatus(ApprovalTaskStatus.PENDING);
+            task.setAssignedAt(LocalDateTime.now());
+            
+            User resolvedApprover = null;
+            
+            // Set specific approver if not "any"
+            if (approverValue != null && !"any".equals(approverValue) && !approverValue.trim().isEmpty()) {
+                try {
+                    Long approverId = Long.parseLong(approverValue.trim());
+                    User approver = userRepository.findById(approverId)
+                            .orElseThrow(() -> new RuntimeException("Approver not found: " + approverId));
+                    resolvedApprover = approver;
+                    task.setApprover(approver);
+                    task.setApproverRole(approver.getRole() != null ? approver.getRole().getName() : null);
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid approver ID format: " + approverValue + " for workflow step: " + workflow.getId());
+                    // Leave approver null for department-level approval
+                }
+            }
+            // If approver is null, it means any approver in the department can approve
+            
+            approvalTaskRepository.save(task);
+
+            // Also create an initial TicketApproval (audit) record in PENDING state
+            TicketApproval pendingAudit = new TicketApproval();
+            pendingAudit.setTicket(ticket);
+            pendingAudit.setWorkflowStep(workflow);
+            ticketStatusRepository.findByName("PENDING").ifPresent(pendingAudit::setStatus);
+            // Store who is assigned if present; otherwise keep null (department-level)
+            if (resolvedApprover != null) {
+                pendingAudit.setApprover(resolvedApprover);
+            }
+            // Some schemas include PENDING in ApprovalAction; fallback to APPROVE if not present
+            try {
+                pendingAudit.setAction(ApprovalAction.valueOf("PENDING"));
+            } catch (IllegalArgumentException ex) {
+                // If PENDING is not a valid action in enum, skip setting action here
+            }
+            ticketApprovalRepository.save(pendingAudit);
+        }
+    }
+
+    /**
+     * Flexible version: accepts raw String keys (could be workflowStepId or stepOrder)
+     */
+    @Transactional
+    public void createApprovalTasksWithFlexibleApprovers(Ticket ticket, Map<String, String> rawApprovers) {
+        if (ticket.getFormTemplate() == null || ticket.getFormTemplate().getApprovalWorkflows() == null) return;
+        List<ApprovalWorkflow> workflows = ticket.getFormTemplate().getApprovalWorkflows();
+        if (workflows.isEmpty() || rawApprovers == null || rawApprovers.isEmpty()) return;
+
+        // Build normalized map: workflowStepId -> approverId
+        Map<Long, String> normalized = new java.util.HashMap<>();
+        for (ApprovalWorkflow wf : workflows) {
+            String byId = rawApprovers.get(String.valueOf(wf.getId()));
+            String byOrder = rawApprovers.get(String.valueOf(wf.getStepOrder()));
+            String picked = (byId != null && !byId.isBlank()) ? byId : byOrder;
+            if (picked != null && !picked.isBlank() && !"any".equalsIgnoreCase(picked)) {
+                normalized.put(wf.getId(), picked.trim());
+            }
+        }
+
+        createApprovalTasksWithSpecificApprovers(ticket, normalized);
+    }
+
+    /**
+     * Create approval tasks from template workflow without assigning specific approvers.
+     * Approver will be determined at runtime based on department/role policies.
+     */
+    @Transactional
+    public void createApprovalTasksFromTemplate(Ticket ticket) {
+        if (ticket.getFormTemplate() == null || ticket.getFormTemplate().getApprovalWorkflows() == null
+                || ticket.getFormTemplate().getApprovalWorkflows().isEmpty()) {
+            return;
+        }
+
+        List<ApprovalWorkflow> workflows = ticket.getFormTemplate().getApprovalWorkflows();
+        for (ApprovalWorkflow workflow : workflows) {
+            ApprovalTask task = new ApprovalTask();
+            task.setTicket(ticket);
+            task.setStepIndex(workflow.getStepOrder());
+            task.setWorkflowStep(workflow);
+            task.setStatus(ApprovalTaskStatus.PENDING);
+            task.setAssignedAt(LocalDateTime.now());
+            // approver left null => any eligible approver can claim/act based on department/role
+            approvalTaskRepository.save(task);
+
+            // Also seed a TicketApproval audit row in PENDING state
+            TicketApproval pendingAudit = new TicketApproval();
+            pendingAudit.setTicket(ticket);
+            pendingAudit.setWorkflowStep(workflow);
+            // status = PENDING if exists
+            ticketStatusRepository.findByName("PENDING").ifPresent(pendingAudit::setStatus);
+            // No specific approver assigned for template path
+            try {
+                pendingAudit.setAction(ApprovalAction.valueOf("PENDING"));
+            } catch (IllegalArgumentException ignored) {}
+            ticketApprovalRepository.save(pendingAudit);
+        }
+    }
+
+    // --------------- New Methods for Approver Dashboard ----------------
+
+    /**
+     * Get approval statistics for specific approver
+     */
+    public ApprovalStatsDto getApprovalStats(Long approverId) {
+        long pending = ticketApprovalRepository.countPendingForApprover(approverId);
+        long processed = ticketApprovalRepository.countProcessedByApprover(approverId);
+        long approved = ticketApprovalRepository.countApprovedByApprover(approverId);
+        long rejected = ticketApprovalRepository.countRejectedByApprover(approverId);
+        
+        return new ApprovalStatsDto(pending, processed, approved, rejected);
+    }
+
+    /**
+     * Get pending tickets for specific approver with filters - NEW VERSION using TicketApproval
+     */
+    public Page<TicketApproval> getPendingTicketsForApprover(Long approverId, Long departmentId, 
+                                                         Long formTemplateId, String priority, 
+                                                         String employeeCode, String q, 
+                                                         Pageable pageable) {
+        return ticketApprovalRepository.findPendingForApprover(approverId, departmentId, formTemplateId, 
+                                                           priority, employeeCode, q, pageable);
+    }
+
+    /**
+     * Get processed tickets by specific approver with filters - NEW VERSION using TicketApproval
+     */
+    public Page<TicketApproval> getProcessedTicketsForApprover(Long approverId, Long departmentId, 
+                                                           Long formTemplateId, String priority, 
+                                                           String employeeCode, String q, 
+                                                           Pageable pageable) {
+        return ticketApprovalRepository.findProcessedByApprover(approverId, departmentId, formTemplateId, 
+                                                            priority, employeeCode, q, pageable);
     }
 }

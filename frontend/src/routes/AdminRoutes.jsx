@@ -13,6 +13,7 @@ import DepartmentList from '../pages/admin/departments/DepartmentList';
 import DepartmentForm from '../pages/admin/departments/DepartmentForm';
 import FormTemplateManagement from '../pages/admin/form-templates/FormTemplateManagement';
 import ViewFormTemplate from '../features/form-templates/ViewFormTemplate';
+import PreviewFormTemplate from '../features/form-templates/PreviewFormTemplate';
 import CreateFormTemplate from '../features/form-templates/CreateFormTemplate';
 
 const AdminRoutes = [
@@ -81,11 +82,19 @@ const AdminRoutes = [
             element: <FormTemplateManagement />,
           },
           {
+            path: 'new',
+            element: <CreateFormTemplate />,
+          },
+          {
             path: ':templateId',
             element: <CreateFormTemplate />,
           },
           {
             path: ':id/view',
+            element: <PreviewFormTemplate />,
+          },
+          {
+            path: ':id/fill',
             element: <ViewFormTemplate />,
           },
         ],

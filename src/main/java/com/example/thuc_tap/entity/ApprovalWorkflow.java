@@ -30,6 +30,10 @@ public class ApprovalWorkflow {
     @JoinColumn(name = "department_id")
     private Department department;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approver_id")
+    private User approver; // Specific approver, null means anyone with approval rights in department
+    
     @Column(name = "step_name", nullable = false, length = 100)
     private String stepName;
 

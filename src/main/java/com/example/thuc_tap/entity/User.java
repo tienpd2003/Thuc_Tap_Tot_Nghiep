@@ -1,5 +1,6 @@
 package com.example.thuc_tap.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -59,15 +60,19 @@ public class User {
     private LocalDateTime updatedAt;
     
     // Relationships
+    @JsonIgnore  // Prevent circular reference in JSON serialization
     @OneToMany(mappedBy = "requester", cascade = CascadeType.ALL)
     private List<Ticket> requestedTickets;
     
+    @JsonIgnore  // Prevent circular reference in JSON serialization
     @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
     private List<FormTemplate> createdFormTemplates;
     
+    @JsonIgnore  // Prevent circular reference in JSON serialization
     @OneToMany(mappedBy = "approver", cascade = CascadeType.ALL)
     private List<TicketApproval> ticketApprovals;
     
+    @JsonIgnore  // Prevent circular reference in JSON serialization
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Notification> notifications;
 }

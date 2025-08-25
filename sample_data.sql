@@ -32,6 +32,7 @@ VALUES
     ('EMAIL', 'Trường nhập địa chỉ email'),
     ('PHONE', 'Trường nhập số điện thoại');
 
+
 INSERT INTO users (employee_code, username, password, full_name, email, phone, department_id, role_id, is_active, created_at)
 VALUES
     ('EMP001', 'linh.nguyenthi', '123456', 'Nguyễn Thị Linh', 'linh.nguyenthi@company.com', '0905123456',
@@ -39,33 +40,49 @@ VALUES
     ('APP001', 'hung.tranvan', '123456', 'Trần Văn Hùng', 'hung.tranvan@company.com', '0912345678',
      2, 2, true, NOW()),
     ('ADM001', 'minh.lequang', '123456', 'Lê Quang Minh', 'minh.lequang@company.com', '0987654321',
-     9, 3, true, NOW());
+     9, 3, true, NOW()),
+    -- Approvers for each department
+    ('APP002', 'hoa.nguyenthi', '123456', 'Nguyễn Thị Hoa', 'hoa.nguyenthi@company.com', '0901234567',
+     1, 2, true, NOW()), -- HR Department
+    ('APP003', 'duc.nguyenvan', '123456', 'Nguyễn Văn Đức', 'duc.nguyenvan@company.com', '0902345678',
+     2, 2, true, NOW()), -- Accounting Department  
+    ('APP004', 'lan.tranthi', '123456', 'Trần Thị Lan', 'lan.tranthi@company.com', '0903456789',
+     3, 2, true, NOW()), -- Technical Support Department
+    ('APP005', 'phong.levan', '123456', 'Lê Văn Phong', 'phong.levan@company.com', '0904567890',
+     4, 2, true, NOW()), -- Sales Department
+    ('APP006', 'thao.nguyenthi', '123456', 'Nguyễn Thị Thảo', 'thao.nguyenthi@company.com', '0905678901',
+     5, 2, true, NOW()), -- Administration Department
+    ('APP007', 'tuan.hoangvan', '123456', 'Hoàng Văn Tuấn', 'tuan.hoangvan@company.com', '0906789012',
+     6, 2, true, NOW()), -- Product Management Department
+    ('APP008', 'nam.nguyenvan', '123456', 'Nguyễn Văn Nam', 'nam.nguyenvan@company.com', '0907890123',
+     7, 2, true, NOW()), -- Software Development Department
+    ('APP009', 'mai.lethi', '123456', 'Lê Thị Mai', 'mai.lethi@company.com', '0908901234',
+     8, 2, true, NOW()), -- Quality Assurance Department
+    ('APP010', 'khanh.nguyenvan', '123456', 'Nguyễn Văn Khánh', 'khanh.nguyenvan@company.com', '0909012345',
+     9, 2, true, NOW()), -- IT Infrastructure Department
+    ('APP011', 'linh.tranthi', '123456', 'Trần Thị Linh', 'linh.tranthi@company.com', '0900123456',
+     10, 2, true, NOW()), -- Marketing Department
+    ('APP012', 'hien.nguyenthi', '123456', 'Nguyễn Thị Hiền', 'hien.nguyenthi@company.com', '0901234567',
+     11, 2, true, NOW()); -- Customer Support Department
 
-INSERT INTO priority_levels (name, level_value, description, created_at)
-VALUES
-    ('LOW', 1, 'Mức độ ưu tiên thấp', NOW()),
-    ('MEDIUM', 2, 'Mức độ ưu tiên trung bình', NOW()),
-    ('HIGH', 3, 'Mức độ ưu tiên cao', NOW()),
-    ('URGENT', 4, 'Mức độ ưu tiên khẩn cấp', NOW());
 
-INSERT INTO ticket_statuses (name, description, created_at)
+INSERT INTO priority_levels (name, description)
 VALUES
-    ('PENDING', 'Chờ xử lý', NOW()),
-    ('IN_PROGRESS', 'Đang xử lý', NOW()),
-    ('COMPLETED', 'Hoàn thành', NOW()),
-    ('CANCELLED', 'Đã hủy', NOW()),
-    ('REJECTED', 'Từ chối', NOW());
+    ('LOW', 'Mức độ ưu tiên thấp'),
+    ('MEDIUM',  'Mức độ ưu tiên trung bình'),
+    ('HIGH',  'Mức độ ưu tiên cao'),
+    ('URGENT', 'Mức độ ưu tiên khẩn cấp');
 
--- Sample tickets cho user Nguyễn Thị Linh (ID: 1)
-INSERT INTO tickets (title, description, requester_id, department_id, priority_id, status_id, due_date, created_at, updated_at)
+
+INSERT INTO ticket_status (name, description)
 VALUES
-    ('Yêu cầu cấp laptop mới', 'Laptop hiện tại bị chậm, cần cấp laptop mới để làm việc hiệu quả', 1, 3, 3, 2, 
-     DATE_ADD(NOW(), INTERVAL 5 DAY), DATE_SUB(NOW(), INTERVAL 2 HOUR), NOW()),
-    ('Đơn xin nghỉ phép', 'Xin nghỉ phép từ ngày 25/1 đến 30/1 để về quê ăn Tết', 1, 1, 2, 1,
-     DATE_ADD(NOW(), INTERVAL 10 DAY), DATE_SUB(NOW(), INTERVAL 4 HOUR), NOW()),
-    ('Sửa chữa máy in văn phòng', 'Máy in tầng 2 bị kẹt giấy, không in được', 1, 3, 3, 3,
-     DATE_ADD(NOW(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY), NOW()),
-    ('Yêu cầu tăng lương', 'Đề xuất tăng lương sau 1 năm làm việc', 1, 1, 2, 1,
-     DATE_ADD(NOW(), INTERVAL 15 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY), NOW());
+    ('PENDING', 'Chờ xử lý'),
+    ('IN_PROGRESS', 'Đang xử lý'),
+    ('COMPLETED', 'Hoàn thành'),
+    ('CANCELLED', 'Đã hủy'),
+    ('REJECTED', 'Từ chối');
+
+
+
 
 

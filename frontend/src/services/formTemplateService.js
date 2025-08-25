@@ -5,9 +5,16 @@ export const getAllFormTemplates = async (filters = {}) => {
   return response.data;
 };
 
+export const getFormTemplates = async (page = 0, size = 10) => {
+  const response = await apiClient.get("/form-templates", { 
+    params: { page, size } 
+  });
+  return response;
+};
+
 export const getFormTemplate = async (formTemplateId) => {
   const response = await apiClient.get(`/form-templates/${formTemplateId}`);
-  return response.data.formSchema;
+  return response.data; // Return full template data, not just formSchema
 };
 
 // Save form schema
@@ -36,4 +43,13 @@ export const submitFormResponse = async (formTemplateId, responseData) => {
     responseData
   );
   return response.data;
+};
+
+// Default export for compatibility
+export default {
+  getAllFormTemplates,
+  getFormTemplates,
+  getFormTemplate,
+  saveFormSchema,
+  submitFormResponse
 };

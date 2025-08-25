@@ -1,6 +1,8 @@
 package com.example.thuc_tap.service;
 
 import com.example.thuc_tap.dto.TicketDto;
+import com.example.thuc_tap.dto.TicketFormDataDto;
+import com.example.thuc_tap.dto.request.CreateTicketFromTemplateRequest;
 import com.example.thuc_tap.entity.*;
 import com.example.thuc_tap.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -38,8 +42,13 @@ public class TicketService {
     @Autowired
     private PriorityLevelRepository priorityLevelRepository;
     
+    // Removed unused TicketFormDataService since form data is stored as JSON in ticket
+    
     @Autowired
-    private TicketApprovalService approvalService;
+    private ApprovalService approvalService;
+
+    @Autowired
+    private TicketApprovalService ticketApprovalService;
 
     /**
      * Lấy danh sách ticket của nhân viên với phân trang
@@ -120,10 +129,77 @@ public class TicketService {
         Ticket savedTicket = ticketRepository.save(ticket);
         
         // Tạo approval tasks từ template workflows
-        approvalService.createApprovalTasksFromTemplate(savedTicket);
+        // TODO: Implement createApprovalTasksFromTemplate method
+        // approvalService.createApprovalTasksFromTemplate(savedTicket);
         
         return convertToDto(savedTicket);
     }
+
+    /**
+     * Tạo ticket từ form template với form data và workflow approvers
+     */
+    public TicketDto createTicketFromTemplate(CreateTicketFromTemplateRequest request) {
+        System.out.println("Creating ticket from template. Request: " + request);
+        
+        // Validate form template
+        FormTemplate formTemplate = formTemplateRepository.findById(request.getTemplateId())
+                .orElseThrow(() -> new RuntimeException("Form template not found with ID: " + request.getTemplateId()));
+
+        // Validate requester
+        User requester = userRepository.findById(request.getRequesterId())
+                .orElseThrow(() -> new RuntimeException("Requester not found with ID: " + request.getRequesterId()));
+
+        // Get default status (PENDING)
+        TicketStatus pendingStatus = ticketStatusRepository.findByName("PENDING")
+                .orElseThrow(() -> new RuntimeException("PENDING status not found"));
+
+        // Resolve priority: user-selected or default MEDIUM
+        PriorityLevel priority;
+        if (request.getPriorityId() != null) {
+            priority = priorityLevelRepository.findById(request.getPriorityId())
+                    .orElseThrow(() -> new RuntimeException("Priority not found with ID: " + request.getPriorityId()));
+        } else {
+            priority = priorityLevelRepository.findByName("MEDIUM")
+                    .orElseThrow(() -> new RuntimeException("MEDIUM priority not found"));
+        }
+
+        // Create ticket
+        Ticket ticket = new Ticket();
+        ticket.setTicketCode(generateTicketCode());
+        ticket.setTitle(request.getTitle() != null ? request.getTitle() : formTemplate.getName());
+        ticket.setDescription(request.getDescription() != null ? request.getDescription() : formTemplate.getDescription());
+        ticket.setRequester(requester);
+        ticket.setDepartment(requester.getDepartment()); // Use requester's department
+        ticket.setCurrentStatus(pendingStatus);
+        ticket.setPriority(priority);
+        ticket.setFormTemplate(formTemplate);
+        // Auto compute due date if template has SLA days
+        if (formTemplate.getDueInDays() != null && formTemplate.getDueInDays() > 0) {
+            ticket.setDueDate(LocalDateTime.now().plusDays(formTemplate.getDueInDays()));
+        }
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        // Save form data directly to ticket JSON field
+        if (request.getFormData() != null && !request.getFormData().isEmpty()) {
+            savedTicket.setFormData(request.getFormData());
+            ticketRepository.save(savedTicket); // Update với form data
+        }
+
+        // Create approval tasks (accepts keys as workflowStepId or stepOrder)
+        Map<String, String> workflowApprovers = request.getWorkflowApprovers();
+        System.out.println("Raw workflowApprovers: " + workflowApprovers);
+        if (workflowApprovers != null && !workflowApprovers.isEmpty()) {
+            approvalService.createApprovalTasksWithFlexibleApprovers(savedTicket, workflowApprovers);
+        } else {
+            approvalService.createApprovalTasksFromTemplate(savedTicket);
+        }
+
+        return convertToDto(savedTicket);
+    }
+
+    // Form data is now saved directly in the ticket's JSON field
+    // No need for separate TicketFormData entities for JSON-based forms
 
     /**
      * Lấy chi tiết ticket
@@ -228,9 +304,38 @@ public class TicketService {
             dto.setPriorityName(ticket.getPriority().getName());
         }
         
-        // Load approvals nếu ticket đã có ID
+        // Convert JSON form data to DTO format with label/type from schema
+        if (ticket.getFormData() != null && !ticket.getFormData().isEmpty()) {
+            List<TicketFormDataDto> formDataList = new ArrayList<>();
+            ticket.getFormData().forEach((key, value) -> {
+                TicketFormDataDto formDataDto = new TicketFormDataDto();
+                formDataDto.setTicketId(ticket.getId());
+                formDataDto.setFieldName(key);
+                formDataDto.setFieldValue(value != null ? value.toString() : null);
+
+                if (ticket.getFormTemplate() != null && ticket.getFormTemplate().getFormSchema() != null
+                        && ticket.getFormTemplate().getFormSchema().getFields() != null) {
+                    ticket.getFormTemplate().getFormSchema().getFields().stream()
+                            .filter(field -> key.equals(field.getKey()))
+                            .findFirst()
+                            .ifPresent(schemaField -> {
+                                formDataDto.setFieldLabel(schemaField.getLabel() != null ? schemaField.getLabel().toString() : null);
+                                formDataDto.setFieldType(schemaField.getType());
+                            });
+                }
+
+                formDataList.add(formDataDto);
+            });
+            dto.setFormData(formDataList);
+        }
+        
+        // Load approvals if ticket already persisted
         if (ticket.getId() != null) {
-            dto.setApprovals(approvalService.getTicketApprovals(ticket.getId()));
+            try {
+                dto.setApprovals(ticketApprovalService.getTicketApprovals(ticket.getId()));
+            } catch (Exception ignored) {
+                // In case approval service is not available, keep approvals as null
+            }
         }
 
         return dto;
