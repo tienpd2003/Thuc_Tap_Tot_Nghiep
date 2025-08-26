@@ -77,24 +77,24 @@ public class ApprovalController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{ticketId}/reject")
-    public ResponseEntity<Void> reject(@PathVariable Long ticketId, @RequestBody RejectRequest req) {
-        Long actingUserId = getCurrentUserId();
-        // Use the new method that works with TicketApproval
-        approvalService.rejectTicketApproval(req.getTaskId(), req.getReason(), actingUserId);
-        return ResponseEntity.ok().build();
-    }
+//    @PostMapping("/{ticketId}/reject")
+//    public ResponseEntity<Void> reject(@PathVariable Long ticketId, @RequestBody RejectRequest req) {
+//        Long actingUserId = getCurrentUserId();
+//        // Use the new method that works with TicketApproval
+//        approvalService.rejectTicketApproval(req.getTaskId(), req.getReason(), actingUserId);
+//        return ResponseEntity.ok().build();
+//    }
 
-    @PostMapping("/{ticketId}/forward")
-    public ResponseEntity<Void> forward(@PathVariable Long ticketId, @RequestBody ForwardRequest req) {
-        Long actingUserId = getCurrentUserId();
-        approvalService.forward(req.getTaskId(), req.getNextApproverId(), req.getNote(), actingUserId);
-        return ResponseEntity.ok().build();
-    }
+//    @PostMapping("/{ticketId}/forward")
+//    public ResponseEntity<Void> forward(@PathVariable Long ticketId, @RequestBody ForwardRequest req) {
+//        Long actingUserId = getCurrentUserId();
+//        approvalService.forward(req.getTaskId(), req.getNextApproverId(), req.getNote(), actingUserId);
+//        return ResponseEntity.ok().build();
+//    }
 
-    private Long getCurrentUserId() {
-        // DEV: return a test user id - Nguyễn Thị Hoa
-        // PROD: replace with SecurityContextHolder retrieval
-        return 4L; // TODO: Get from SecurityContextHolder
-    }
+//    private Long getCurrentUserId() {
+//        // DEV: return a test user id - Nguyễn Thị Hoa
+//        // PROD: replace with SecurityContextHolder retrieval
+//        return 4L; // TODO: Get from SecurityContextHolder
+//    }
 }

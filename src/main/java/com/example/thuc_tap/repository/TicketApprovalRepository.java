@@ -31,7 +31,7 @@ public interface TicketApprovalRepository extends JpaRepository<TicketApproval, 
            "WHERE ta.ticket.id = :ticketId " +
            "AND ta.action = 'PENDING' " +
            "ORDER BY ws.stepOrder ASC")
-    Optional<TicketApproval> findFirstPendingByTicketId(@Param("ticketId") Long ticketId);
+    List<TicketApproval> findFirstPendingByTicketId(@Param("ticketId") Long ticketId);
     
     /**
      * Kiểm tra xem ticket đã có approval tasks chưa

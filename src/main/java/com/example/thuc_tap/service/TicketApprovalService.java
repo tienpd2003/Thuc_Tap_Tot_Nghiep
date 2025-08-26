@@ -142,9 +142,12 @@ public class TicketApprovalService {
      * Lấy approval task đang pending đầu tiên
      */
     public TicketApprovalDto getNextPendingApproval(Long ticketId) {
-        return ticketApprovalRepository.findFirstPendingByTicketId(ticketId)
-                .map(this::convertToDto)
-                .orElse(null);
+        List<TicketApproval> pendingList = ticketApprovalRepository.findFirstPendingByTicketId(ticketId);
+        TicketApproval firstPending = pendingList.isEmpty() ? null : pendingList.get(0);
+        return firstPending == null ? null : convertToDto(firstPending);
+//        return ticketApprovalRepository.findFirstPendingByTicketId(ticketId)
+//                .map(this::convertToDto)
+//                .orElse(null);
     }
     
     /**

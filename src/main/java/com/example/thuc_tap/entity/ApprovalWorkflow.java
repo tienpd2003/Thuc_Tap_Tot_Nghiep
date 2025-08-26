@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "approval_workflows")
@@ -46,4 +47,7 @@ public class ApprovalWorkflow {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "workflowStep", fetch = FetchType.LAZY)
+    private List<TicketApproval> ticketApprovals;
 }

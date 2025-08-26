@@ -1,5 +1,6 @@
 package com.example.thuc_tap.service;
 
+import com.example.thuc_tap.dto.ApprovalWorkflowDto;
 import com.example.thuc_tap.dto.request.CreateFormTemplateRequest;
 import com.example.thuc_tap.dto.request.FormTemplateFilterRequest;
 import com.example.thuc_tap.dto.response.FormTemplateFilterResponse;
@@ -153,33 +154,77 @@ public class FormTemplateService {
         formTemplate.setCreatedBy(createdBy);
         formTemplate.setFormSchema(request.getFormSchema());
 
-        // Xóa hết các workflow cũ trước khi thêm mới
-        approvalWorkflowRepository.deleteByFormTemplateId(formTemplate.getId());
-
-        List<ApprovalWorkflow> approvalWorkflows = request.getApprovalWorkflows().stream()
-            .map(workflowDto -> {
-                ApprovalWorkflow approvalWorkflow = new ApprovalWorkflow();
-                approvalWorkflow.setStepOrder(workflowDto.getStepOrder());
-
-                if (workflowDto.getDepartmentId() != null) {
-                    Department department = departmentRepository.findById(workflowDto.getDepartmentId())
-                        .orElseThrow(() -> new RuntimeException("Department not found with id: " + workflowDto.getDepartmentId()));
-                    approvalWorkflow.setDepartment(department);
-                } else {
-                    approvalWorkflow.setDepartment(null);
+        // Kiểm tra có ticket nào đang dùng workflow này không
+        boolean hasLinkedTickets = false;
+        if (formTemplate.getApprovalWorkflows() != null && !formTemplate.getApprovalWorkflows().isEmpty()) {
+            for (ApprovalWorkflow workflow : formTemplate.getApprovalWorkflows()) {
+                if (workflow.getTicketApprovals() != null && !workflow.getTicketApprovals().isEmpty()) {
+                    hasLinkedTickets = true;
+                    break;
                 }
+            }
+        }
 
-                approvalWorkflow.setApprover(null);
-                approvalWorkflow.setStepName(workflowDto.getStepName());
-                approvalWorkflow.setFormTemplate(formTemplate);
+        if (hasLinkedTickets) {
+            // Nếu có ticket đang dùng workflow, chỉ cho phép chỉnh form schema, không xóa/sửa workflow
+            // Nếu workflow mới khác với workflow cũ thì không cho phép cập nhật
+            List<ApprovalWorkflow> currentWorkflows = formTemplate.getApprovalWorkflows();
+            List<ApprovalWorkflowDto> newWorkflows = request.getApprovalWorkflows();
 
-                return approvalWorkflow;
-            })
-            .collect(Collectors.toList());
-        formTemplate.setApprovalWorkflows(approvalWorkflows);
+            boolean workflowsIdentical = currentWorkflows.size() == newWorkflows.size();
+            if (workflowsIdentical) {
+                for (int i = 0; i < currentWorkflows.size(); i++) {
+                    ApprovalWorkflow current = currentWorkflows.get(i);
+                    ApprovalWorkflowDto incoming = newWorkflows.get(i);
+                    Long currentDeptId = current.getDepartment() != null ? current.getDepartment().getId() : null;
+                    Long incomingDeptId = incoming.getDepartmentId();
+                    if (!current.getStepOrder().equals(incoming.getStepOrder()) ||
+                        !safeEquals(currentDeptId, incomingDeptId) ||
+                        !safeEquals(current.getStepName(), incoming.getStepName())) {
+                        workflowsIdentical = false;
+                        break;
+                    }
+                }
+            }
+            if (!workflowsIdentical) {
+                throw new RuntimeException("Cannot update workflow when tickets exist.");
+            }
+
+            // Nếu identical, chỉ cập nhật schema
+        } else {
+            // Xóa hết các workflow cũ trước khi thêm mới
+            approvalWorkflowRepository.deleteByFormTemplateId(formTemplate.getId());
+
+            List<ApprovalWorkflow> approvalWorkflows = request.getApprovalWorkflows().stream()
+                .map(workflowDto -> {
+                    ApprovalWorkflow approvalWorkflow = new ApprovalWorkflow();
+                    approvalWorkflow.setStepOrder(workflowDto.getStepOrder());
+
+                    if (workflowDto.getDepartmentId() != null) {
+                        Department department = departmentRepository.findById(workflowDto.getDepartmentId())
+                            .orElseThrow(() -> new RuntimeException("Department not found with id: " + workflowDto.getDepartmentId()));
+                        approvalWorkflow.setDepartment(department);
+                    } else {
+                        approvalWorkflow.setDepartment(null);
+                    }
+
+                    approvalWorkflow.setApprover(null);
+                    approvalWorkflow.setStepName(workflowDto.getStepName());
+                    approvalWorkflow.setFormTemplate(formTemplate);
+
+                    return approvalWorkflow;
+                })
+                .collect(Collectors.toList());
+            formTemplate.setApprovalWorkflows(approvalWorkflows);
+        }
 
         FormTemplate savedFormTemplate = formTemplateRepository.save(formTemplate);
 
         return formTemplateMapper.toResponse(savedFormTemplate);
+    }
+
+    // Helper method for safe equals
+    private boolean safeEquals(Object a, Object b) {
+        return (a == null && b == null) || (a != null && a.equals(b));
     }
 }

@@ -461,7 +461,7 @@ const FormBuilder = ({ templateId }) => {
           {/* Save / Submit */}
           {isPreviewMode ? (
             <button
-              onClick={handleSubmitForm}
+              onClick={handleSaveForm}
               className="flex items-center gap-2 border border-green-600 text-green-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors"
             >
               <MdCheckCircle size={18} />
