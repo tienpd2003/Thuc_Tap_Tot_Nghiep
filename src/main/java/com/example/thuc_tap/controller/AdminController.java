@@ -3,6 +3,8 @@ package com.example.thuc_tap.controller;
 import com.example.thuc_tap.dto.response.AdminDashboardStatsDto;
 import com.example.thuc_tap.dto.response.DailyTicketStatsDto;
 import com.example.thuc_tap.dto.response.DepartmentStatsDto;
+import com.example.thuc_tap.dto.response.UserGrowthStatsDto;
+import com.example.thuc_tap.dto.response.RecentUserDto;
 import com.example.thuc_tap.service.AdminStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -89,6 +91,40 @@ public class AdminController {
                 .build();
         
         return ResponseEntity.ok(quickStats);
+    }
+
+    /**
+     * API lấy thống kê tăng trưởng người dùng theo thời gian
+     * GET /api/admin/stats/user-growth?period=week|month|year
+     * - Dữ liệu cho biểu đồ UserGrowthChart
+     */
+    @GetMapping("/stats/user-growth")
+    public ResponseEntity<List<UserGrowthStatsDto>> getUserGrowthStats(
+            @RequestParam(defaultValue = "month") String period) {
+        
+        if (!isValidPeriod(period)) {
+            period = "month";
+        }
+        
+        List<UserGrowthStatsDto> userGrowthStats = adminStatsService.getUserGrowthStats(period);
+        return ResponseEntity.ok(userGrowthStats);
+    }
+
+    /**
+     * API lấy danh sách người dùng mới đăng ký gần đây
+     * GET /api/admin/stats/recent-users?limit=10
+     * - Dữ liệu cho phần "Recent Users" trong dashboard
+     */
+    @GetMapping("/stats/recent-users")
+    public ResponseEntity<List<RecentUserDto>> getRecentUsers(
+            @RequestParam(defaultValue = "10") int limit) {
+        
+        if (limit <= 0 || limit > 50) {
+            limit = 10; // Giới hạn an toàn
+        }
+        
+        List<RecentUserDto> recentUsers = adminStatsService.getRecentUsers(limit);
+        return ResponseEntity.ok(recentUsers);
     }
 
     // ========== HELPER METHODS ==========

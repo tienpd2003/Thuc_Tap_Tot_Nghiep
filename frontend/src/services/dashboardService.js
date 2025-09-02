@@ -36,6 +36,16 @@ export const dashboardService = {
   getStatisticsByPeriod: (period = 'month') => {
     return apiClient.get(`${API_ENDPOINTS.ADMIN_STATS_OVERVIEW}?period=${period}`);
   },
+
+  // NEW: API cho User Growth Chart
+  getUserGrowthStats: (period = 'month') => {
+    return apiClient.get(`${API_ENDPOINTS.ADMIN_STATS_USER_GROWTH}?period=${period}`);
+  },
+
+  // NEW: API cho Recent Users List  
+  getRecentUsers: (limit = 10) => {
+    return apiClient.get(`${API_ENDPOINTS.ADMIN_STATS_RECENT_USERS}?limit=${limit}`);
+  },
 };
 
 export default dashboardService;

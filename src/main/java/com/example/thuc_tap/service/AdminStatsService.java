@@ -3,15 +3,22 @@ package com.example.thuc_tap.service;
 import com.example.thuc_tap.dto.response.AdminDashboardStatsDto;
 import com.example.thuc_tap.dto.response.DailyTicketStatsDto;
 import com.example.thuc_tap.dto.response.DepartmentStatsDto;
+import com.example.thuc_tap.dto.response.UserGrowthStatsDto;
+import com.example.thuc_tap.dto.response.RecentUserDto;
 import com.example.thuc_tap.entity.Department;
+import com.example.thuc_tap.entity.User;
 import com.example.thuc_tap.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -200,5 +207,273 @@ public class AdminStatsService {
         // TODO: Implement logic tính toán dựa vào bảng ticket_approvals
         // Tạm thời return giá trị mặc định
         return 24.0; // 24 giờ
+    }
+
+    /**
+     * Lấy thống kê tăng trưởng người dùng theo thời gian
+     * @param period "week", "month", "year" - thời kỳ thống kê
+     * @return List<UserGrowthStatsDto> dữ liệu cho biểu đồ tăng trưởng người dùng
+     */
+    public List<UserGrowthStatsDto> getUserGrowthStats(String period) {
+        List<UserGrowthStatsDto> growthStats = new ArrayList<>();
+        
+        // Xác định khoảng thời gian và bước nhảy
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate;
+        
+        switch (period.toLowerCase()) {
+            case "week":
+                startDate = endDate.minusWeeks(12); // 12 tuần trước
+                break;
+            case "year":
+                startDate = endDate.minusYears(2); // 2 năm trước
+                break;
+            default: // month
+                startDate = endDate.minusMonths(12); // 12 tháng trước
+                break;
+        }
+        
+        // Lấy dữ liệu theo từng khoảng thời gian
+        if (period.equals("week")) {
+            growthStats = getUserGrowthByWeeks(startDate, endDate);
+        } else if (period.equals("year")) {
+            growthStats = getUserGrowthByYears(startDate, endDate);
+        } else {
+            growthStats = getUserGrowthByMonths(startDate, endDate);
+        }
+        
+        return growthStats;
+    }
+    
+    /**
+     * Lấy thống kê tăng trưởng người dùng theo tháng
+     */
+    private List<UserGrowthStatsDto> getUserGrowthByMonths(LocalDate startDate, LocalDate endDate) {
+        List<UserGrowthStatsDto> monthlyStats = new ArrayList<>();
+        
+        LocalDate currentMonth = startDate.withDayOfMonth(1);
+        while (!currentMonth.isAfter(endDate)) {
+            LocalDate nextMonth = currentMonth.plusMonths(1);
+            LocalDateTime monthStart = currentMonth.atStartOfDay();
+            LocalDateTime monthEnd = nextMonth.atStartOfDay();
+            
+            UserGrowthStatsDto monthStat = UserGrowthStatsDto.builder()
+                    .date(currentMonth)
+                    .month("Tháng " + currentMonth.getMonthValue())
+                    .dateString(currentMonth.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                    .build();
+            
+            // Đếm người dùng mới trong tháng
+            Long newUsersInMonth = userRepository.countByCreatedAtBetween(monthStart, monthEnd);
+            monthStat.setNewUsers(newUsersInMonth);
+            
+            // Tổng số người dùng tích lũy đến cuối tháng
+            Long totalUsersUntilMonth = userRepository.countByCreatedAtLessThan(monthEnd);
+            monthStat.setTotalUsers(totalUsersUntilMonth);
+            
+            // Người dùng hoạt động trong tháng (có đăng nhập hoặc tạo ticket)
+            // TODO: Cần thêm tracking lastLoginAt hoặc tính dựa trên ticket activity
+            Long activeUsersInMonth = Math.round(totalUsersUntilMonth * 0.7); // Giả định 70% active
+            monthStat.setActiveUsers(activeUsersInMonth);
+            
+            // Tính tỷ lệ tăng trưởng so với tháng trước
+            if (!monthlyStats.isEmpty()) {
+                UserGrowthStatsDto previousMonth = monthlyStats.get(monthlyStats.size() - 1);
+                if (previousMonth.getTotalUsers() > 0) {
+                    double growth = ((double) (totalUsersUntilMonth - previousMonth.getTotalUsers()) 
+                                   / previousMonth.getTotalUsers()) * 100;
+                    monthStat.setGrowthRate(Math.round(growth * 10.0) / 10.0); // Round to 1 decimal
+                }
+            }
+            
+            monthlyStats.add(monthStat);
+            currentMonth = nextMonth;
+        }
+        
+        return monthlyStats;
+    }
+    
+    /**
+     * Lấy thống kê tăng trưởng người dùng theo tuần
+     */
+    private List<UserGrowthStatsDto> getUserGrowthByWeeks(LocalDate startDate, LocalDate endDate) {
+        List<UserGrowthStatsDto> weeklyStats = new ArrayList<>();
+        
+        LocalDate currentWeek = startDate;
+        int weekNumber = 1;
+        
+        while (!currentWeek.isAfter(endDate)) {
+            LocalDate nextWeek = currentWeek.plusWeeks(1);
+            LocalDateTime weekStart = currentWeek.atStartOfDay();
+            LocalDateTime weekEnd = nextWeek.atStartOfDay();
+            
+            UserGrowthStatsDto weekStat = UserGrowthStatsDto.builder()
+                    .date(currentWeek)
+                    .month("Tuần " + weekNumber)
+                    .dateString(currentWeek.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                    .build();
+            
+            // Đếm người dùng mới trong tuần
+            Long newUsersInWeek = userRepository.countByCreatedAtBetween(weekStart, weekEnd);
+            weekStat.setNewUsers(newUsersInWeek);
+            
+            // Tổng số người dùng tích lũy đến cuối tuần
+            Long totalUsersUntilWeek = userRepository.countByCreatedAtLessThan(weekEnd);
+            weekStat.setTotalUsers(totalUsersUntilWeek);
+            
+            // Người dùng hoạt động ước tính
+            Long activeUsersInWeek = Math.round(totalUsersUntilWeek * 0.8); // Giả định 80% active
+            weekStat.setActiveUsers(activeUsersInWeek);
+            
+            weeklyStats.add(weekStat);
+            currentWeek = nextWeek;
+            weekNumber++;
+        }
+        
+        return weeklyStats;
+    }
+    
+    /**
+     * Lấy thống kê tăng trưởng người dùng theo năm
+     */
+    private List<UserGrowthStatsDto> getUserGrowthByYears(LocalDate startDate, LocalDate endDate) {
+        List<UserGrowthStatsDto> yearlyStats = new ArrayList<>();
+        
+        int startYear = startDate.getYear();
+        int endYear = endDate.getYear();
+        
+        for (int year = startYear; year <= endYear; year++) {
+            LocalDate yearStart = LocalDate.of(year, 1, 1);
+            LocalDate yearEnd = LocalDate.of(year + 1, 1, 1);
+            LocalDateTime yearStartTime = yearStart.atStartOfDay();
+            LocalDateTime yearEndTime = yearEnd.atStartOfDay();
+            
+            UserGrowthStatsDto yearStat = UserGrowthStatsDto.builder()
+                    .date(yearStart)
+                    .month("Năm " + year)
+                    .dateString(yearStart.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                    .build();
+            
+            // Đếm người dùng mới trong năm
+            Long newUsersInYear = userRepository.countByCreatedAtBetween(yearStartTime, yearEndTime);
+            yearStat.setNewUsers(newUsersInYear);
+            
+            // Tổng số người dùng tích lũy đến cuối năm
+            Long totalUsersUntilYear = userRepository.countByCreatedAtLessThan(yearEndTime);
+            yearStat.setTotalUsers(totalUsersUntilYear);
+            
+            // Người dùng hoạt động ước tính
+            Long activeUsersInYear = Math.round(totalUsersUntilYear * 0.6); // Giả định 60% active
+            yearStat.setActiveUsers(activeUsersInYear);
+            
+            yearlyStats.add(yearStat);
+        }
+        
+        return yearlyStats;
+    }
+    
+    /**
+     * Lấy danh sách người dùng mới đăng ký gần đây
+     * @param limit số lượng người dùng cần lấy (default: 10)
+     * @return List<RecentUserDto> danh sách người dùng mới
+     */
+    public List<RecentUserDto> getRecentUsers(int limit) {
+        if (limit <= 0 || limit > 50) {
+            limit = 10; // Default value và giới hạn tối đa
+        }
+        
+        // Lấy người dùng mới nhất theo thời gian tạo, sắp xếp giảm dần
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
+        List<User> recentUsers = userRepository.findByIsActiveWithPagination(true, pageable);
+        
+        return recentUsers.stream()
+                .map(this::convertToRecentUserDto)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Chuyển đổi User entity thành RecentUserDto
+     */
+    private RecentUserDto convertToRecentUserDto(User user) {
+        RecentUserDto dto = RecentUserDto.builder()
+                .id(user.getId())
+                .employeeCode(user.getEmployeeCode())
+                .username(user.getUsername())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .isActive(user.getIsActive())
+                .createdAt(user.getCreatedAt())
+                .build();
+        
+        // Thông tin phòng ban
+        if (user.getDepartment() != null) {
+            dto.setDepartmentName(user.getDepartment().getName());
+        } else {
+            dto.setDepartmentName("Chưa phân công");
+        }
+        
+        // Thông tin vai trò
+        if (user.getRole() != null) {
+            dto.setRoleName(user.getRole().getName());
+            dto.setRoleLabel(convertRoleToLabel(user.getRole().getName()));
+        }
+        
+        // Tính thời gian "time ago"
+        dto.setTimeAgo(calculateTimeAgo(user.getCreatedAt()));
+        
+        // Xác định trạng thái
+        dto.setStatusLabel(user.getIsActive() ? "Hoạt động" : "Vô hiệu hóa");
+        
+        // Đếm số ticket đã tạo
+        Long ticketCount = ticketRepository.countByRequesterId(user.getId());
+        dto.setTotalTicketsCreated(ticketCount);
+        
+        // TODO: Implement lastLoginAt và lastActivityAt tracking
+        dto.setLastLoginAt(user.getCreatedAt()); // Tạm thời dùng createdAt
+        dto.setLastActivityAt(user.getUpdatedAt() != null ? user.getUpdatedAt() : user.getCreatedAt());
+        
+        return dto;
+    }
+    
+    /**
+     * Chuyển đổi tên role thành label tiếng Việt
+     */
+    private String convertRoleToLabel(String roleName) {
+        if (roleName == null) return "Không xác định";
+        
+        switch (roleName.toUpperCase()) {
+            case "ADMIN":
+                return "Quản trị viên";
+            case "APPROVER":
+                return "Người phê duyệt";
+            case "EMPLOYEE":
+                return "Nhân viên";
+            default:
+                return roleName;
+        }
+    }
+    
+    /**
+     * Tính thời gian "time ago" từ thời điểm tạo đến hiện tại
+     */
+    private String calculateTimeAgo(LocalDateTime createdAt) {
+        if (createdAt == null) return "Không xác định";
+        
+        LocalDateTime now = LocalDateTime.now();
+        long minutes = ChronoUnit.MINUTES.between(createdAt, now);
+        long hours = ChronoUnit.HOURS.between(createdAt, now);
+        long days = ChronoUnit.DAYS.between(createdAt, now);
+        
+        if (minutes < 60) {
+            return minutes <= 1 ? "1 phút trước" : minutes + " phút trước";
+        } else if (hours < 24) {
+            return hours == 1 ? "1 giờ trước" : hours + " giờ trước";
+        } else if (days < 30) {
+            return days == 1 ? "1 ngày trước" : days + " ngày trước";
+        } else {
+            long months = days / 30;
+            return months == 1 ? "1 tháng trước" : months + " tháng trước";
+        }
     }
 }
