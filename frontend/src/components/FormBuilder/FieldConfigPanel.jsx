@@ -455,7 +455,7 @@ const FieldConfigPanel = ({ field, onSave, onCancel, existingFields = [] }) => {
                     className="flex items-center justify-center"
                   >
                     {config.validation?.required ? (
-                      <FaCheckSquare className="h-4 w-4 text-[#5e83ae]" />
+                      <FaCheckSquare className="h-4 w-4 text-[#1976d2]" />
                     ) : (
                       <FaRegSquare className="h-4 w-4 text-gray-400" />
                     )}
@@ -475,7 +475,7 @@ const FieldConfigPanel = ({ field, onSave, onCancel, existingFields = [] }) => {
                   }
                   placeholder="Optional help text for users"
                   rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae] text-sm resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] text-sm resize-none"
                 />
               </div>
             </div>
@@ -965,7 +965,7 @@ const FieldConfigPanel = ({ field, onSave, onCancel, existingFields = [] }) => {
                       ],
                     });
                   }}
-                  className="flex items-center border rounded gap-1 px-2 py-1 text-sm text-[#5e83ae] hover:bg-gray-200"
+                  className="flex items-center border rounded gap-1 px-2 py-1 text-sm text-[#1976d2] hover:bg-gray-200"
                 >
                   <MdAdd size={18} />
                   Thêm Option
@@ -1093,7 +1093,7 @@ const FieldConfigPanel = ({ field, onSave, onCancel, existingFields = [] }) => {
 
                 <button
                   onClick={addVisibilityCondition}
-                  className="flex items-center border rounded gap-1 px-2 py-1 text-sm text-[#5e83ae] hover:bg-gray-200"
+                  className="flex items-center border rounded gap-1 px-2 py-1 text-sm text-[#1976d2] hover:bg-gray-200"
                 >
                   <MdAdd size={18} />
                   Thêm điều kiện

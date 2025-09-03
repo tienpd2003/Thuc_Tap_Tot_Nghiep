@@ -6,12 +6,15 @@ import com.example.thuc_tap.dto.request.FormTemplateFilterRequest;
 import com.example.thuc_tap.dto.response.FormTemplateFilterResponse;
 import com.example.thuc_tap.dto.response.FormTemplateResponse;
 import com.example.thuc_tap.entity.*;
+import com.example.thuc_tap.exception.ConflictException;
+import com.example.thuc_tap.exception.ResourceNotFoundException;
 import com.example.thuc_tap.mapper.FormTemplateMapper;
 import com.example.thuc_tap.repository.ApprovalWorkflowRepository;
 import com.example.thuc_tap.repository.DepartmentRepository;
 import com.example.thuc_tap.repository.FormTemplateRepository;
 import com.example.thuc_tap.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -65,7 +69,7 @@ public class FormTemplateService {
 
     public FormTemplateResponse getFormTemplateById(Long id) {
         FormTemplate formTemplate = formTemplateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("FormTemplate not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("FormTemplate not found with id: " + id));
         return formTemplateMapper.toResponse(formTemplate);
     }
 
@@ -79,7 +83,7 @@ public class FormTemplateService {
         formTemplate.setDueInDays(request.getDueInDays());
 
         User createdBy = userRepository.findById(request.getCreatedById())
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getCreatedById()));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getCreatedById()));
 
         formTemplate.setCreatedBy(createdBy);
         formTemplate.setFormSchema(request.getFormSchema());
@@ -92,7 +96,7 @@ public class FormTemplateService {
 //                formField.setFieldLabel(fieldDto.getFieldLabel());
 //
 //                FieldType fieldType = fieldTypeRepository.findById(fieldDto.getFieldTypeId())
-//                        .orElseThrow(() -> new RuntimeException("FieldType not found: " + fieldDto.getFieldTypeId()));
+//                        .orElseThrow(() -> new ResourceNotFoundException("FieldType not found: " + fieldDto.getFieldTypeId()));
 //                formField.setFieldType(fieldType);
 //                formField.setIsRequired(fieldDto.getIsRequired());
 //                formField.setFieldOrder(fieldDto.getFieldOrder());
@@ -115,7 +119,7 @@ public class FormTemplateService {
 
                 if (workflowDto.getDepartmentId() != null) {
                     Department department = departmentRepository.findById(workflowDto.getDepartmentId())
-                        .orElseThrow(() -> new RuntimeException("Department not found with id: " + workflowDto.getDepartmentId()));
+                        .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + workflowDto.getDepartmentId()));
                     approvalWorkflow.setDepartment(department);
                 } else {
                     approvalWorkflow.setDepartment(null);
@@ -141,7 +145,7 @@ public class FormTemplateService {
     @Transactional
     public FormTemplateResponse updateFormTemplate(Long id, CreateFormTemplateRequest request) {
         FormTemplate formTemplate = formTemplateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("FormTemplate not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("FormTemplate not found with id: " + id));
 
         formTemplate.setName(request.getName());
         formTemplate.setDescription(request.getDescription());
@@ -149,7 +153,7 @@ public class FormTemplateService {
         formTemplate.setDueInDays(request.getDueInDays());
 
         User createdBy = userRepository.findById(request.getCreatedById())
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getCreatedById()));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getCreatedById()));
 
         formTemplate.setCreatedBy(createdBy);
         formTemplate.setFormSchema(request.getFormSchema());
@@ -187,7 +191,7 @@ public class FormTemplateService {
                 }
             }
             if (!workflowsIdentical) {
-                throw new RuntimeException("Cannot update workflow when tickets exist.");
+                throw new ConflictException("Không thể cập nhật quy trình vì đã có ticket được tạo từ form.");
             }
 
             // Nếu identical, chỉ cập nhật schema
@@ -202,7 +206,7 @@ public class FormTemplateService {
 
                     if (workflowDto.getDepartmentId() != null) {
                         Department department = departmentRepository.findById(workflowDto.getDepartmentId())
-                            .orElseThrow(() -> new RuntimeException("Department not found with id: " + workflowDto.getDepartmentId()));
+                            .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + workflowDto.getDepartmentId()));
                         approvalWorkflow.setDepartment(department);
                     } else {
                         approvalWorkflow.setDepartment(null);
@@ -226,5 +230,32 @@ public class FormTemplateService {
     // Helper method for safe equals
     private boolean safeEquals(Object a, Object b) {
         return (a == null && b == null) || (a != null && a.equals(b));
+    }
+
+    public void activate(Long id) {
+        FormTemplate formTemplate = formTemplateRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("FormTemplate not found with id: " + id));
+
+        formTemplate.setIsActive(true);
+        formTemplateRepository.save(formTemplate);
+    }
+
+    public void deactivate(Long id) {
+        FormTemplate formTemplate = formTemplateRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("FormTemplate not found with id: " + id));
+
+        formTemplate.setIsActive(false);
+        formTemplateRepository.save(formTemplate);
+    }
+
+    public void deleteFormTemplate(Long id) {
+        FormTemplate formTemplate = formTemplateRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("FormTemplate not found with id: " + id));
+
+        try {
+            formTemplateRepository.delete(formTemplate);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ConflictException("Không thể xóa form do đã được sử dụng, hãy hủy kích hoạt form thay vì xóa.");
+        }
     }
 }

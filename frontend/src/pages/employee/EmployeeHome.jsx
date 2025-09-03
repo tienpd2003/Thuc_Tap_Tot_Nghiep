@@ -162,7 +162,7 @@ export default function EmployeeHome() {
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-[#5e83ae] to-[#4a6b8a] rounded-xl p-8 text-white">
+      <div className="bg-gradient-to-r from-[#1976d2] to-[#4a6b8a] rounded-xl p-8 text-white">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Welcome back{user?.fullName ? `, ${user.fullName}` : ''}!</h1>
@@ -269,7 +269,7 @@ export default function EmployeeHome() {
             <h2 className="text-xl font-semibold text-gray-900">My Tickets</h2>
             <button 
               onClick={() => navigate('/employee/tickets/create')}
-              className="bg-[#5e83ae] text-white px-4 py-2 rounded-lg hover:bg-[#4a6b8a] transition-colors text-sm font-medium flex items-center space-x-2"
+              className="bg-[#1976d2] text-white px-4 py-2 rounded-lg hover:bg-[#4a6b8a] transition-colors text-sm font-medium flex items-center space-x-2"
             >
               <span>+</span>
               <span>Create New Ticket</span>
@@ -311,7 +311,7 @@ export default function EmployeeHome() {
                 <tr>
                   <td colSpan="8" className="px-6 py-8 text-center">
                     <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#5e83ae]"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1976d2]"></div>
                       <span className="ml-2 text-gray-500">Đang tải dữ liệu...</span>
                     </div>
                   </td>
@@ -325,7 +325,7 @@ export default function EmployeeHome() {
               ) : (
                 myTickets.map((ticket) => (
                   <tr key={ticket.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#5e83ae]">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#1976d2]">
                       {ticket.ticketCode || `TKT-${ticket.id}`}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -408,7 +408,7 @@ export default function EmployeeHome() {
                   onClick={() => handlePageChange(index)}
                   className={`px-3 py-1 text-sm border rounded-md transition-colors ${
                     index === pagination.currentPage
-                      ? 'bg-[#5e83ae] text-white border-[#5e83ae]'
+                      ? 'bg-[#1976d2] text-white border-[#1976d2]'
                       : 'border-gray-300 hover:bg-gray-50'
                   }`}
                 >

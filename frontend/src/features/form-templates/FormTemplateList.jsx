@@ -1,9 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { FiSearch, FiFilter, FiEye, FiEdit, FiTrash2, FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight, FiChevronDown, FiChevronUp, FiX } from "react-icons/fi";
-import { Popover } from '@mui/material';
-import { getAllFormTemplates } from "../../services/formTemplateService";
+import {
+  FiSearch,
+  FiFilter,
+  FiEye,
+  FiEdit,
+  FiTrash2,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsLeft,
+  FiChevronsRight,
+  FiChevronDown,
+  FiChevronUp,
+  FiX,
+  FiPauseCircle,
+  FiPlayCircle,
+} from "react-icons/fi";
+import { Popover } from "@mui/material";
+import { getAllFormTemplates, activateFormTemplate, deactivateFormTemplate, deleteFormTemplate } from "../../services/formTemplateService";
 import { Link, useNavigate } from "react-router-dom";
 import { departmentService, userService } from "../../services";
+import Popup from "../../components/ui/Popup";
 
 const FormTemplateList = () => {
   const navigate = useNavigate();
@@ -11,12 +27,12 @@ const FormTemplateList = () => {
   const [loading, setLoading] = useState(true);
   const [admins, setAdmins] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, template: null });
   const [filters, setFilters] = useState({
     keyword: "",
     isActive: "",
     createdById: "",
     approvalDepartmentId: "",
+    dueInDays: "",
     createdAtFrom: "",
     createdAtTo: "",
     updatedAtFrom: "",
@@ -40,40 +56,41 @@ const FormTemplateList = () => {
     'bg-purple-100 text-purple-800',
     'bg-orange-100 text-orange-800',
     'bg-pink-100 text-pink-800',
+    'bg-yellow-100 text-yellow-800',
     'bg-indigo-100 text-indigo-800',
     'bg-teal-100 text-teal-800',
-    'bg-yellow-100 text-yellow-800',
+    
   ];
 
   // Format date function
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   // Three-state sorting function
   const handleSort = (field) => {
-    let newDirection = 'asc';
+    let newDirection = "asc";
     if (filters.sortBy === field) {
-      if (filters.sortDirection === 'asc') {
-        newDirection = 'desc';
-      } else if (filters.sortDirection === 'desc') {
+      if (filters.sortDirection === "asc") {
+        newDirection = "desc";
+      } else if (filters.sortDirection === "desc") {
         // Third click - remove sorting
         setFilters({
           ...filters,
           sortBy: "createdAt",
-          sortDirection: "desc"
+          sortDirection: "desc",
         });
         fetchFormTemplates({
           ...filters,
           sortBy: "createdAt",
-          sortDirection: "desc"
+          sortDirection: "desc",
         });
         return;
       }
@@ -82,12 +99,12 @@ const FormTemplateList = () => {
     setFilters({
       ...filters,
       sortBy: field,
-      sortDirection: newDirection
+      sortDirection: newDirection,
     });
     fetchFormTemplates({
       ...filters,
       sortBy: field,
-      sortDirection: newDirection
+      sortDirection: newDirection,
     });
   };
 
@@ -98,9 +115,9 @@ const FormTemplateList = () => {
     }
 
     switch (filters.sortDirection) {
-      case 'asc':
+      case "asc":
         return <FiChevronUp className="h-3 w-3 text-white" />;
-      case 'desc':
+      case "desc":
         return <FiChevronDown className="h-3 w-3 text-white" />;
       default:
         return <FiChevronUp className="h-3 w-3 text-white opacity-30" />;
@@ -115,7 +132,11 @@ const FormTemplateList = () => {
       // Lọc bỏ field rỗng/null
       const queryParams = {};
       Object.keys(filterParams).forEach((key) => {
-        if (filterParams[key] !== "" && filterParams[key] !== null && filterParams[key] !== undefined) {
+        if (
+          filterParams[key] !== "" &&
+          filterParams[key] !== null &&
+          filterParams[key] !== undefined
+        ) {
           queryParams[key] = filterParams[key];
         }
       });
@@ -132,7 +153,7 @@ const FormTemplateList = () => {
   const fetchDepartments = async () => {
     try {
       setLoading(true);
-      const result = await departmentService.getAllDepartments()
+      const result = await departmentService.getAllDepartments();
       setDepartments(result.data);
     } catch (error) {
       console.error("Failed to fetch departments", error);
@@ -156,11 +177,11 @@ const FormTemplateList = () => {
   useEffect(() => {
     fetchFormTemplates();
     fetchDepartments();
-    fetchAdmins()
+    fetchAdmins();
   }, []);
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleApplyFilters = () => {
@@ -180,7 +201,7 @@ const FormTemplateList = () => {
       page: 0,
       pageSize: filters.pageSize,
       sortBy: "createdAt",
-      sortDirection: "desc"
+      sortDirection: "desc",
     };
     setFilters(resetFilters);
     fetchFormTemplates(resetFilters);
@@ -194,28 +215,167 @@ const FormTemplateList = () => {
     fetchFormTemplates({ ...filters, pageSize: newSize, page: 0 });
   };
 
+  const [loadingStates, setLoadingStates] = useState({});
+  const [error, setError] = useState(null);
+
+  const handleActivate = async (templateId) => {
+    setLoadingStates((prev) => ({ ...prev, [templateId]: true }));
+    try {
+      await activateFormTemplate(templateId);
+      showPopup(
+        "success",
+        "Thành công",
+        "Kích hoạt biểu mẫu thành công!",
+        null,
+        true
+      );
+      fetchFormTemplates(); // Refresh data
+    } catch (error) {
+      console.error("Failed to activate template:", error);
+      setError("Failed to activate template");
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, [templateId]: false }));
+    }
+  };
+
+  const handleDeactivate = async (templateId) => {
+    const confirmed = await new Promise((resolve) => {
+      showPopup(
+        "confirm",
+        "Xác nhận",
+        "Bạn có chắc chắn muốn hủy kích hoạt biểu mẫu này?",
+        () => resolve(true),
+        false
+      );
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setLoadingStates((prev) => ({ ...prev, [templateId]: true }));
+    try {
+      await deactivateFormTemplate(templateId);
+      showPopup(
+        "success",
+        "Thành công",
+        "Hủy kích hoạt biểu mẫu thành công!",
+        null,
+        true
+      );
+      fetchFormTemplates(); // Refresh data
+    } catch (error) {
+      console.error("Failed to deactivate template:", error);
+      setError("Failed to deactivate template");
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, [templateId]: false }));
+    }
+  };
+
+  const handleDelete = async (templateId) => {
+    const confirmed = await new Promise((resolve) => {
+      showPopup(
+        "confirm",
+        "Xác nhận",
+        "Bạn có chắc chắn muốn xóa vĩnh viễn biểu mẫu này?",
+        () => resolve(true),
+        false
+      );
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setLoadingStates((prev) => ({ ...prev, [templateId]: true }));
+    try {
+      await deleteFormTemplate(templateId);
+      showPopup(
+        "success",
+        "Thành công",
+        "Xóa biểu mẫu thành công!",
+        null,
+        true
+      );
+      fetchFormTemplates();
+    } catch (error) {
+      console.error("Failed to delete template:", error);
+      let errorMsg = "Không thể lưu biểu mẫu";
+      if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      showPopup("error", "Lỗi", errorMsg);
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, [templateId]: false }));
+    }
+  };
+
   // Popover handlers
   const handleStatusClick = (event) => setStatusAnchorEl(event.currentTarget);
   const handleStatusClose = () => setStatusAnchorEl(null);
-  const handleCreatedByClick = (event) => setCreatedByAnchorEl(event.currentTarget);
+  const handleCreatedByClick = (event) =>
+    setCreatedByAnchorEl(event.currentTarget);
   const handleCreatedByClose = () => setCreatedByAnchorEl(null);
-  const handleDepartmentClick = (event) => setDepartmentAnchorEl(event.currentTarget);
+  const handleDepartmentClick = (event) =>
+    setDepartmentAnchorEl(event.currentTarget);
   const handleDepartmentClose = () => setDepartmentAnchorEl(null);
-  const handlePageSizeClick = (event) => setPageSizeAnchorEl(event.currentTarget);
+  const handlePageSizeClick = (event) =>
+    setPageSizeAnchorEl(event.currentTarget);
   const handlePageSizeClose = () => setPageSizeAnchorEl(null);
 
-  if (!data && loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#5e83ae]"></div>
-    </div>
-  );
+  const [popup, setPopup] = useState({
+    isOpen: false,
+    type: "success",
+    title: "",
+    message: "",
+    onConfirm: null,
+    autoClose: false,
+  });
 
-  const { content, number, totalPages, totalElements, first, last, size } = data || {};
+  const showPopup = (
+    type,
+    title,
+    message,
+    onConfirm = null,
+    autoClose = false,
+    onCloseCallback = null
+  ) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message,
+      onConfirm,
+      autoClose,
+      onCloseCallback, // Thêm callback khi popup đóng
+    });
+  };
+
+  const closePopup = () => {
+    if (popup.onCloseCallback) {
+      popup.onCloseCallback();
+    }
+    setPopup({
+      ...popup,
+      isOpen: false,
+    });
+  };
+
+  if (!data && loading)
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#1976d2]"></div>
+      </div>
+    );
+
+  const { content, number, totalPages, totalElements, first, last, size } =
+    data || {};
 
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w mx-auto">
-
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -225,13 +385,13 @@ const FormTemplateList = () => {
             <div className="flex gap-2">
               <button
                 onClick={handleApplyFilters}
-                className="px-4 py-2 bg-[#5e83ae] text-white rounded-lg hover:bg-[#4a6b8a] transition-colors text-sm font-medium"
+                className="px-4 py-2 bg-[#1976d2] text-white rounded-lg hover:bg-[#4a6b8a] transition-colors text-sm font-medium"
               >
                 Áp dụng
               </button>
               <button
                 onClick={handleResetFilters}
-                className="px-4 py-2 border border-[#5e83ae] text-[#5e83ae] rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
+                className="px-4 py-2 border border-[#1976d2] text-[#1976d2] rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
               >
                 Loại bỏ
               </button>
@@ -242,7 +402,9 @@ const FormTemplateList = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             {/* Keyword Search */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tìm kiếm
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiSearch className="h-5 w-5 text-gray-400" />
@@ -250,23 +412,34 @@ const FormTemplateList = () => {
                 <input
                   type="text"
                   value={filters.keyword}
-                  onChange={(e) => handleFilterChange("keyword", e.target.value)}
+                  onChange={(e) =>
+                    handleFilterChange("keyword", e.target.value)
+                  }
                   placeholder="Tìm kiếm theo tên, mô tả form"
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae] text-sm"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] text-sm"
                 />
               </div>
             </div>
 
             {/* Status Filter - Popover */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Trạng thái
+              </label>
               <button
                 onClick={handleStatusClick}
                 className="w-full text-left px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm flex items-center justify-between"
               >
-                <span className={filters.isActive === "" ? "text-gray-500" : "text-gray-900"}>
-                  {filters.isActive === "" ? "Tất cả" :
-                    filters.isActive === "true" ? "Active" : "Inactive"}
+                <span
+                  className={
+                    filters.isActive === "" ? "text-gray-500" : "text-gray-900"
+                  }
+                >
+                  {filters.isActive === ""
+                    ? "Tất cả"
+                    : filters.isActive === "true"
+                    ? "Active"
+                    : "Inactive"}
                 </span>
                 <FiChevronDown className="h-4 w-4 text-gray-400" />
               </button>
@@ -274,24 +447,33 @@ const FormTemplateList = () => {
                 open={Boolean(statusAnchorEl)}
                 anchorEl={statusAnchorEl}
                 onClose={handleStatusClose}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                transformOrigin={{ vertical: "top", horizontal: "left" }}
               >
                 <div className="p-2 min-w-[200px]">
                   <button
-                    onClick={() => { handleFilterChange("isActive", ""); handleStatusClose(); }}
+                    onClick={() => {
+                      handleFilterChange("isActive", "");
+                      handleStatusClose();
+                    }}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                   >
                     Tất cả
                   </button>
                   <button
-                    onClick={() => { handleFilterChange("isActive", "true"); handleStatusClose(); }}
+                    onClick={() => {
+                      handleFilterChange("isActive", "true");
+                      handleStatusClose();
+                    }}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                   >
                     Active
                   </button>
                   <button
-                    onClick={() => { handleFilterChange("isActive", "false"); handleStatusClose(); }}
+                    onClick={() => {
+                      handleFilterChange("isActive", "false");
+                      handleStatusClose();
+                    }}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                   >
                     Inactive
@@ -301,14 +483,24 @@ const FormTemplateList = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Người tạo</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Người tạo
+              </label>
               <button
                 onClick={handleCreatedByClick}
                 className="w-full text-left px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm flex items-center justify-between"
               >
-                <span className={filters.createdById === "" ? "text-gray-500" : "text-gray-900"}>
-                  {filters.createdById === "" ? "Tất cả" :
-                    admins.find(a => a.id == filters.createdById)?.fullName || "Unknown"}
+                <span
+                  className={
+                    filters.createdById === ""
+                      ? "text-gray-500"
+                      : "text-gray-900"
+                  }
+                >
+                  {filters.createdById === ""
+                    ? "Tất cả"
+                    : admins.find((a) => a.id == filters.createdById)
+                        ?.fullName || "Unknown"}
                 </span>
                 <FiChevronDown className="h-4 w-4 text-gray-400" />
               </button>
@@ -317,17 +509,20 @@ const FormTemplateList = () => {
                 anchorEl={createdByAnchorEl}
                 onClose={handleCreatedByClose}
                 anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'left',
+                  vertical: "bottom",
+                  horizontal: "left",
                 }}
                 transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'left',
+                  vertical: "top",
+                  horizontal: "left",
                 }}
               >
                 <div className="p-2 min-w-[250px] max-h-60 overflow-y-auto">
                   <button
-                    onClick={() => { handleFilterChange("createdById", ""); handleCreatedByClose(); }}
+                    onClick={() => {
+                      handleFilterChange("createdById", "");
+                      handleCreatedByClose();
+                    }}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                   >
                     Tất cả
@@ -335,7 +530,10 @@ const FormTemplateList = () => {
                   {admins.map((admin) => (
                     <button
                       key={admin.id}
-                      onClick={() => { handleFilterChange("createdById", admin.id); handleCreatedByClose(); }}
+                      onClick={() => {
+                        handleFilterChange("createdById", admin.id);
+                        handleCreatedByClose();
+                      }}
                       className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                     >
                       {admin.fullName || admin.username}
@@ -347,14 +545,25 @@ const FormTemplateList = () => {
 
             {/* Department Filter - Popover */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phòng ban xử lý</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phòng ban xử lý
+              </label>
               <button
                 onClick={handleDepartmentClick}
                 className="w-full text-left px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm flex items-center justify-between"
               >
-                <span className={filters.approvalDepartmentId === "" ? "text-gray-500" : "text-gray-900"}>
-                  {filters.approvalDepartmentId === "" ? "Tất cả" :
-                    departments.find(d => d.id == filters.approvalDepartmentId)?.name || "Unknown"}
+                <span
+                  className={
+                    filters.approvalDepartmentId === ""
+                      ? "text-gray-500"
+                      : "text-gray-900"
+                  }
+                >
+                  {filters.approvalDepartmentId === ""
+                    ? "Tất cả"
+                    : departments.find(
+                        (d) => d.id == filters.approvalDepartmentId
+                      )?.name || "Unknown"}
                 </span>
                 <FiChevronDown className="h-4 w-4 text-gray-400" />
               </button>
@@ -363,17 +572,20 @@ const FormTemplateList = () => {
                 anchorEl={departmentAnchorEl}
                 onClose={handleDepartmentClose}
                 anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'left',
+                  vertical: "bottom",
+                  horizontal: "left",
                 }}
                 transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'left',
+                  vertical: "top",
+                  horizontal: "left",
                 }}
               >
                 <div className="p-3 border-b border-gray-100">
                   <button
-                    onClick={() => { handleFilterChange("approvalDepartmentId", ""); handleDepartmentClose(); }}
+                    onClick={() => {
+                      handleFilterChange("approvalDepartmentId", "");
+                      handleDepartmentClose();
+                    }}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                   >
                     Tất cả
@@ -381,7 +593,13 @@ const FormTemplateList = () => {
                   {departments.map((department) => (
                     <button
                       key={department.id}
-                      onClick={() => { handleFilterChange("approvalDepartmentId", department.id); handleDepartmentClose(); }}
+                      onClick={() => {
+                        handleFilterChange(
+                          "approvalDepartmentId",
+                          department.id
+                        );
+                        handleDepartmentClose();
+                      }}
                       className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2"
                     >
                       {department.name}
@@ -395,42 +613,58 @@ const FormTemplateList = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Created From</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Created From
+                </label>
                 <input
                   type="date"
                   value={filters.createdAtFrom}
-                  onChange={(e) => handleFilterChange("createdAtFrom", e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae] text-sm"
+                  onChange={(e) =>
+                    handleFilterChange("createdAtFrom", e.target.value)
+                  }
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Created To</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Created To
+                </label>
                 <input
                   type="date"
                   value={filters.createdAtTo}
-                  onChange={(e) => handleFilterChange("createdAtTo", e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae] text-sm"
+                  onChange={(e) =>
+                    handleFilterChange("createdAtTo", e.target.value)
+                  }
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] text-sm"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Updated From</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Updated From
+                </label>
                 <input
                   type="date"
                   value={filters.updatedAtFrom}
-                  onChange={(e) => handleFilterChange("updatedAtFrom", e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae] text-sm"
+                  onChange={(e) =>
+                    handleFilterChange("updatedAtFrom", e.target.value)
+                  }
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Updated To</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Updated To
+                </label>
                 <input
                   type="date"
                   value={filters.updatedAtTo}
-                  onChange={(e) => handleFilterChange("updatedAtTo", e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae] text-sm"
+                  onChange={(e) =>
+                    handleFilterChange("updatedAtTo", e.target.value)
+                  }
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] text-sm"
                 />
               </div>
             </div>
@@ -440,149 +674,253 @@ const FormTemplateList = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-[#5e83ae]">
+              <thead className="bg-[#1976d2]">
                 <tr>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">#</th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    <div className="flex items-center">
-                      Thông tin form
-                    </div>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                  >
+                    #
                   </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                  >
+                    <div className="flex items-center">Thông tin form</div>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                  >
                     <button
-                      onClick={() => handleSort('createdById')}
+                      onClick={() => handleSort("createdById")}
                       className="flex items-center hover:bg-[#4a6b8a] px-2 py-1 rounded transition-colors"
                     >
                       Người tạo
-                      <div className="ml-1">
-                        {getSortIcon('createdById')}
-                      </div>
+                      <div className="ml-1">{getSortIcon("createdById")}</div>
                     </button>
                   </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                  >
                     <button
-                      onClick={() => handleSort('isActive')}
+                      onClick={() => handleSort("isActive")}
                       className="flex items-center hover:bg-[#4a6b8a] px-2 py-1 rounded transition-colors"
                     >
                       Trạng thái
-                      <div className="ml-1">
-                        {getSortIcon('isActive')}
-                      </div>
+                      <div className="ml-1">{getSortIcon("isActive")}</div>
                     </button>
                   </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                  >
                     <button
-                      onClick={() => handleSort('createdAt')}
+                      onClick={() => handleSort("dueInDays")}
+                      className="flex items-center hover:bg-[#4a6b8a] px-2 py-1 rounded transition-colors"
+                    >
+                      Hạn xử lý (ngày)
+                      <div className="ml-1">{getSortIcon("dueInDays")}</div>
+                    </button>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                  >
+                    <button
+                      onClick={() => handleSort("createdAt")}
                       className="flex items-center hover:bg-[#4a6b8a] px-2 py-1 rounded transition-colors"
                     >
                       Ngày tạo
-                      <div className="ml-1">
-                        {getSortIcon('createdAt')}
-                      </div>
+                      <div className="ml-1">{getSortIcon("createdAt")}</div>
                     </button>
                   </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                  >
                     <button
-                      onClick={() => handleSort('updatedAt')}
+                      onClick={() => handleSort("updatedAt")}
                       className="flex items-center hover:bg-[#4a6b8a] px-2 py-1 rounded transition-colors"
                     >
                       Ngày cập nhật
-                      <div className="ml-1">
-                        {getSortIcon('updatedAt')}
-                      </div>
+                      <div className="ml-1">{getSortIcon("updatedAt")}</div>
                     </button>
                   </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Thao tác</th>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider"
+                  >
+                    Thao tác
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {!content || content.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                    <td
+                      colSpan="7"
+                      className="px-6 py-12 text-center text-gray-500"
+                    >
                       {loading ? (
                         <div className="flex justify-center">
-                          <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[#5e83ae]"></div>
+                          <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[#1976d2]"></div>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center">
                           <FiX className="h-12 w-12 text-gray-300 mb-2" />
-                          <p className="text-lg font-medium text-gray-400">Không tìm thấy kết quả phù hợp</p>
-                          <p className="text-sm text-gray-400">Điều chỉnh lại bộ lọc</p>
+                          <p className="text-lg font-medium text-gray-400">
+                            Không tìm thấy kết quả phù hợp
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            Điều chỉnh lại bộ lọc
+                          </p>
                         </div>
                       )}
                     </td>
                   </tr>
                 ) : (
                   content.map((item, index) => (
-                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={item.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {number * size + index + 1}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 w-4/12 align-top">
                         <div className="flex flex-col space-y-3">
                           <div className="flex flex-col">
-                            <span className="text-lg font-semibold text-[#5e83ae]">{item.name}</span>
-                            <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                            <span className="text-xl font-semibold text-[#1976d2]">
+                              {item.name}
+                            </span>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {item.description}
+                            </p>
                           </div>
                           <div className="mt-2">
-                            <span className="text-xs font-medium text-gray-500 block mb-2">Quy trình xử lý:</span>
+                            <span className="text-xs font-medium text-gray-500 block mb-2">
+                              Quy trình xử lý:
+                            </span>
                             <div className="flex items-center flex-wrap gap-2">
-                              {item.approvalDepartments && item.approvalDepartments.map((dept, idx) => (
-                                <React.Fragment key={idx}>
-                                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${departmentColors[idx % departmentColors.length]}`}>
-                                    {dept}
-                                  </span>
-                                  {idx < item.approvalDepartments.length - 1 && (
-                                    <span className="text-gray-400 text-xs">→</span>
-                                  )}
-                                </React.Fragment>
-                              ))}
+                              {item.approvalDepartments &&
+                                item.approvalDepartments.map((dept, idx) => (
+                                  <React.Fragment key={idx}>
+                                    <span
+                                      className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                        departmentColors[
+                                          idx % departmentColors.length
+                                        ]
+                                      }`}
+                                    >
+                                      {dept}
+                                    </span>
+                                    {idx <
+                                      item.approvalDepartments.length - 1 && (
+                                      <span className="text-gray-400 text-xs">
+                                        →
+                                      </span>
+                                    )}
+                                  </React.Fragment>
+                                ))}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         <div>
-                          <div className="font-medium">{item.createdByFullName}</div>
-                          <div className="text-gray-500 text-xs">@{item.createdByUsername}</div>
+                          <div className="font-medium">
+                            {item.createdByFullName}
+                          </div>
+                          <div className="text-gray-500 text-xs">
+                            @{item.createdByUsername}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${item.isActive
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                          }`}>
+                        <span
+                          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full  ${
+                            item.isActive
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
                           {item.isActive ? "ACTIVE" : "INACTIVE"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        <div className="font-medium">{formatDate(item.createdAt)}</div>
+                      <td className="px-6 py-4 w-1/12 whitespace-nowrap text-sm text-gray-700 justify-items-center">
+                        <div className="font-medium">
+                          {item.dueInDays}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        <div className="font-medium">{formatDate(item.updatedAt)}</div>
+                        <div className="font-medium">
+                          {formatDate(item.createdAt)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <div className="font-medium">
+                          {formatDate(item.updatedAt)}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
+                        <div className="flex">
                           <Link
                             to={`/admin/form-templates/${item.id}/view`}
                             className="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50 transition-colors"
                             title="View details"
                           >
-                            <FiEye className="h-4 w-4" />
+                            <FiEye className="h-5 w-5" />
                           </Link>
                           <button
-                            onClick={() => navigate(`/admin/form-templates/${item.id}`)}
+                            onClick={() =>
+                              navigate(`/admin/form-templates/${item.id}`)
+                            }
                             className="text-green-600 hover:text-green-900 p-2 rounded-lg hover:bg-green-50 transition-colors"
                             title="Edit"
                           >
-                            <FiEdit className="h-4 w-4" />
+                            <FiEdit className="h-5 w-5" />
                           </button>
+                          {item.isActive ? (
+  <button
+    onClick={() => handleDeactivate(item.id)}
+    disabled={loadingStates[item.id]}
+    title="Deactivate"
+    className="p-2 rounded-lg transition-colors 
+               text-yellow-600 hover:text-yellow-900 
+               hover:bg-yellow-50 disabled:opacity-50"
+  >
+    {loadingStates[item.id] ? (
+      <div className="animate-spin rounded-full h-4 w-4 
+                      border-t-2 border-b-2 border-yellow-600"></div>
+    ) : (
+      <FiPauseCircle className="h-5 w-5" />
+    )}
+  </button>
+) : (
+  <button
+    onClick={() => handleActivate(item.id)}
+    disabled={loadingStates[item.id]}
+    title="Activate"
+    className="p-2 rounded-lg transition-colors 
+               text-gray-600 hover:text-gray-900 
+               hover:bg-gray-50 disabled:opacity-50"
+  >
+    {loadingStates[item.id] ? (
+      <div className="animate-spin rounded-full h-4 w-4 
+                      border-t-2 border-b-2 border-gray-600"></div>
+    ) : (
+      <FiPlayCircle className="h-5 w-5" />
+    )}
+  </button>
+)}
                           <button
-                            onClick={() => setDeleteDialog({ open: true, template: item })}
+                            onClick={() => handleDelete(item.id)}
                             className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors"
                             title="Delete"
                           >
-                            <FiTrash2 className="h-4 w-4" />
+                            <FiTrash2 className="h-5 w-5" />
                           </button>
                         </div>
                       </td>
@@ -609,14 +947,17 @@ const FormTemplateList = () => {
                   open={Boolean(pageSizeAnchorEl)}
                   anchorEl={pageSizeAnchorEl}
                   onClose={handlePageSizeClose}
-                  anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-                  transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  anchorOrigin={{ vertical: "top", horizontal: "left" }}
+                  transformOrigin={{ vertical: "bottom", horizontal: "left" }}
                 >
                   <div className="p-2">
                     {[5, 10, 25, 50].map((size) => (
                       <button
                         key={size}
-                        onClick={() => { handlePageSizeChange(size); handlePageSizeClose(); }}
+                        onClick={() => {
+                          handlePageSizeChange(size);
+                          handlePageSizeClose();
+                        }}
                         className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded-md"
                       >
                         {size}
@@ -633,7 +974,7 @@ const FormTemplateList = () => {
                   className="p-2 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 hover:bg-gray-100 transition-colors"
                   title="First page"
                 >
-                  <FiChevronsLeft className="h-4 w-4" />
+                  <FiChevronsLeft className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => handlePageChange(number - 1)}
@@ -641,7 +982,7 @@ const FormTemplateList = () => {
                   className="p-2 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 hover:bg-gray-100 transition-colors"
                   title="Previous page"
                 >
-                  <FiChevronLeft className="h-4 w-4" />
+                  <FiChevronLeft className="h-5 w-5" />
                 </button>
 
                 <div className="flex space-x-1 mx-2">
@@ -661,10 +1002,11 @@ const FormTemplateList = () => {
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        className={`w-8 h-8 rounded-md text-sm transition-colors ${number === pageNum
-                          ? "bg-[#5e83ae] text-white"
-                          : "border border-gray-300 text-gray-700 hover:bg-gray-100"
-                          }`}
+                        className={`w-8 h-8 rounded-md text-sm transition-colors ${
+                          number === pageNum
+                            ? "bg-[#1976d2] text-white"
+                            : "border border-gray-300 text-gray-700 hover:bg-gray-100"
+                        }`}
                       >
                         {pageNum + 1}
                       </button>
@@ -678,7 +1020,7 @@ const FormTemplateList = () => {
                   className="p-2 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 hover:bg-gray-100 transition-colors"
                   title="Next page"
                 >
-                  <FiChevronRight className="h-4 w-4" />
+                  <FiChevronRight className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => handlePageChange(totalPages - 1)}
@@ -686,13 +1028,15 @@ const FormTemplateList = () => {
                   className="p-2 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 hover:bg-gray-100 transition-colors"
                   title="Last page"
                 >
-                  <FiChevronsRight className="h-4 w-4" />
+                  <FiChevronsRight className="h-5 w-5" />
                 </button>
               </div>
 
               {data && (
                 <div className="text-sm text-gray-600">
-                  Hiển thị {number * size + 1} - {Math.min((number + 1) * size, totalElements)} trong {totalElements} kết quả
+                  Hiển thị {number * size + 1} -{" "}
+                  {Math.min((number + 1) * size, totalElements)} trong{" "}
+                  {totalElements} kết quả
                 </div>
               )}
             </div>
@@ -700,38 +1044,15 @@ const FormTemplateList = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      {deleteDialog.open && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Confirm Delete
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete "{deleteDialog.template?.name}"? This action cannot be undone.
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setDeleteDialog({ open: false, template: null })}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  // TODO: Implement delete functionality
-                  console.log('Delete template:', deleteDialog.template?.id);
-                  setDeleteDialog({ open: false, template: null });
-                  alert('Delete functionality will be implemented soon!');
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Popup
+        isOpen={popup.isOpen}
+        onClose={closePopup}
+        type={popup.type}
+        title={popup.title}
+        message={popup.message}
+        onConfirm={popup.onConfirm}
+        autoClose={popup.autoClose}
+      />
     </div>
   );
 };

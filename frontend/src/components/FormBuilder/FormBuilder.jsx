@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import FormCanvas from './FormCanvas';
-import WorkflowTab from './WorkflowTab';
-import WorkflowConfigPanel from './WorkflowConfigPanel';
-import Toolbox from './Toolbox';
-import FieldConfigPanel from './FieldConfigPanel';
+import React, { useState, useEffect } from "react";
+import FormCanvas from "./FormCanvas";
+import WorkflowTab from "./WorkflowTab";
+import WorkflowConfigPanel from "./WorkflowConfigPanel";
+import Toolbox from "./Toolbox";
+import FieldConfigPanel from "./FieldConfigPanel";
 import { MdPreview, MdCheckCircle, MdSave, MdClose } from "react-icons/md";
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { apiClient, departmentService } from '../../services';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { apiClient, departmentService } from "../../services";
+import Popup from "../../components/ui/Popup";
 
 // Main Form Builder Component
 const FormBuilder = ({ templateId }) => {
@@ -16,38 +17,77 @@ const FormBuilder = ({ templateId }) => {
 
   const [formSchema, setFormSchema] = useState({
     fields: [],
-    layout: { type: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '16px' }
+    layout: {
+      type: "grid",
+      gridTemplateColumns: "repeat(12, 1fr)",
+      gap: "16px",
+    },
   });
   const [workflowSteps, setWorkflowSteps] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [activeTab, setActiveTab] = useState('fields'); // 'fields' or 'workflow'
+  const [activeTab, setActiveTab] = useState("fields"); // 'fields' or 'workflow'
   const [editingFieldIndex, setEditingFieldIndex] = useState(null);
   const [editingStepIndex, setEditingStepIndex] = useState(null);
 
+  // State cho popup
+  const [popup, setPopup] = useState({
+    isOpen: false,
+    type: "success",
+    title: "",
+    message: "",
+    onConfirm: null,
+    autoClose: false,
+  });
+
   // Debug editingFieldIndex changes
   useEffect(() => {
-    console.log('editingFieldIndex changed to:', editingFieldIndex);
+    console.log("editingFieldIndex changed to:", editingFieldIndex);
   }, [editingFieldIndex]);
   const [formData, setFormData] = useState({});
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [templates, setTemplates] = useState([]);
-  const [selectedTemplate, setSelectedTemplate] = useState(templateId === 'new' ? '' : templateId || '');
-  const [templateName, setTemplateName] = useState('');
-  const [templateDescription, setTemplateDescription] = useState('');
-  const [dueInDays, setDueInDays] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState(
+    templateId === "new" ? "" : templateId || ""
+  );
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
+  const [dueInDays, setDueInDays] = useState("");
 
   // Function to reload templates
   const reloadTemplates = async () => {
     try {
-      const response = await apiClient.get('/form-templates');
-      console.log('🔄 Reloading templates:', response.data);
-      
+      const response = await apiClient.get("/form-templates");
+      console.log("🔄 Reloading templates:", response.data);
+
       const templatesData = response.data?.content || response.data || [];
       setTemplates(Array.isArray(templatesData) ? templatesData : []);
     } catch (error) {
-      console.error('Failed to reload templates:', error);
+      console.error("Failed to reload templates:", error);
     }
+  };
+
+  // Hàm hiển thị popup
+  const showPopup = (type, title, message, onConfirm = null, autoClose = false, onCloseCallback = null) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message,
+      onConfirm,
+      autoClose,
+      onCloseCallback // Thêm callback khi popup đóng
+    });
+  };
+
+  const closePopup = () => {
+    if (popup.onCloseCallback) {
+      popup.onCloseCallback();
+    }
+    setPopup({
+      ...popup,
+      isOpen: false
+    });
   };
 
   // Load departments
@@ -57,13 +97,13 @@ const FormBuilder = ({ templateId }) => {
         const response = await departmentService.getAllDepartments();
         setDepartments(response.data);
       } catch (error) {
-        console.error('Failed to load departments:', error);
+        console.error("Failed to load departments:", error);
         // Fallback data for testing
         setDepartments([
-          { id: 1, name: 'IT Department' },
-          { id: 2, name: 'HR Department' },
-          { id: 3, name: 'Finance Department' },
-          { id: 4, name: 'Marketing Department' }
+          { id: 1, name: "IT Department" },
+          { id: 2, name: "HR Department" },
+          { id: 3, name: "Finance Department" },
+          { id: 4, name: "Marketing Department" },
         ]);
       }
     };
@@ -75,16 +115,16 @@ const FormBuilder = ({ templateId }) => {
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const response = await apiClient.get('/form-templates');
-        console.log('📋 Templates response:', response.data);
-        
+        const response = await apiClient.get("/form-templates");
+        console.log("📋 Templates response:", response.data);
+
         // Backend returns Page<FormTemplateFilterResponse>, need to get content array
         const templatesData = response.data?.content || response.data || [];
         setTemplates(Array.isArray(templatesData) ? templatesData : []);
-        
-        console.log('📋 Templates set to:', templatesData);
+
+        console.log("📋 Templates set to:", templatesData);
       } catch (error) {
-        console.error('Failed to load form templates:', error);
+        console.error("Failed to load form templates:", error);
         setTemplates([]); // Set empty array on error
       }
     };
@@ -94,7 +134,7 @@ const FormBuilder = ({ templateId }) => {
 
   // Load form schema when template is selected
   useEffect(() => {
-    if (selectedTemplate && selectedTemplate !== 'new') {
+    if (selectedTemplate && selectedTemplate !== "new") {
       loadFormSchema(selectedTemplate);
     }
   }, [selectedTemplate]);
@@ -106,22 +146,22 @@ const FormBuilder = ({ templateId }) => {
       setWorkflowSteps([]);
 
       const response = await apiClient.get(`/form-templates/${templateId}`);
-      console.log('Received data from backend:', response.data);
-      
+      console.log("Received data from backend:", response.data);
+
       // Transform backend response to frontend format
       const backendFormSchema = response.data.formSchema;
       const transformedFormSchema = {
-        fields: (backendFormSchema?.fields || []).map(field => ({
+        fields: (backendFormSchema?.fields || []).map((field) => ({
           key: field.key,
           label: field.label,
           type: field.type,
           helpText: field.helpText || field.placeholder,
           validation: field.validation || {},
           ui: field.ui || { colSpan: 12 },
-          options: (field.options || []).map(option => ({
+          options: (field.options || []).map((option) => ({
             value: option.value,
             label: option.label,
-            disabled: option.disabled || false
+            disabled: option.disabled || false,
           })),
           readOnly: field.readOnly || false,
           defaultValue: field.defaultValue,
@@ -129,25 +169,27 @@ const FormBuilder = ({ templateId }) => {
           visibility: field.visibility,
           repeatConfig: field.repeatConfig,
           subFields: field.subFields || [],
-          meta: field.meta || {}
+          meta: field.meta || {},
         })),
-        layout: backendFormSchema?.layout || { 
-          type: 'grid', 
-          gridTemplateColumns: 'repeat(12, 1fr)', 
-          gap: '16px' 
-        }
+        layout: backendFormSchema?.layout || {
+          type: "grid",
+          gridTemplateColumns: "repeat(12, 1fr)",
+          gap: "16px",
+        },
       };
 
       // Transform workflow steps
-      const transformedWorkflowSteps = (response.data.approvalWorkflows || []).map(workflow => ({
+      const transformedWorkflowSteps = (
+        response.data.approvalWorkflows || []
+      ).map((workflow) => ({
         id: workflow.id,
         stepOrder: workflow.stepOrder,
         departmentId: workflow.departmentId,
-        stepName: workflow.stepName
+        stepName: workflow.stepName,
       }));
 
-      console.log('Transformed form schema:', transformedFormSchema);
-      console.log('Transformed workflow steps:', transformedWorkflowSteps);
+      console.log("Transformed form schema:", transformedFormSchema);
+      console.log("Transformed workflow steps:", transformedWorkflowSteps);
 
       setFormSchema(transformedFormSchema);
       setWorkflowSteps(transformedWorkflowSteps); // Đảm bảo chỉ set 1 lần
@@ -155,8 +197,8 @@ const FormBuilder = ({ templateId }) => {
       setTemplateDescription(response.data.description);
       setFormData({});
     } catch (error) {
-      console.error('Failed to load form schema:', error);
-      alert('Failed to load form schema');
+      console.error("Failed to load form schema:", error);
+      showPopup("error", "Lỗi", "Không thể tải biểu mẫu");
     } finally {
       setIsLoading(false);
     }
@@ -164,30 +206,46 @@ const FormBuilder = ({ templateId }) => {
 
   const handleSaveForm = async () => {
     // Confirm before saving
-    const confirmed = window.confirm('Are you sure you want to save this form template?');
+    const confirmed = await new Promise((resolve) => {
+      showPopup(
+        "confirm",
+        "Xác nhận",
+        "Bạn có chắc chắn muốn lưu biểu mẫu này?",
+        () => resolve(true),
+        false
+      );
+    });
+
     if (!confirmed) {
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       // Test backend connection first
-      console.log('🔍 Testing backend connection...');
+      console.log("🔍 Testing backend connection...");
       try {
-        const testResponse = await apiClient.get('/form-templates');
-        console.log('✅ Backend is reachable:', testResponse.status);
+        const testResponse = await apiClient.get("/form-templates");
+        console.log("✅ Backend is reachable:", testResponse.status);
       } catch (testError) {
-        console.warn('⚠️ Backend test failed:', testError.message);
-        if (testError.code === 'NETWORK_ERROR' || testError.message.includes('Network Error')) {
-          alert('❌ Cannot connect to backend server. Please check if the server is running.');
+        console.warn("⚠️ Backend test failed:", testError.message);
+        if (
+          testError.code === "NETWORK_ERROR" ||
+          testError.message.includes("Network Error")
+        ) {
+          showPopup(
+            "error",
+            "Lỗi mạng",
+            "Không thể kết nối đến máy chủ. Vui lòng kiểm tra:\n1. Máy chủ backend đang chạy trên cổng 8080\n2. Kết nối internet ổn định\n3. CORS đã được cấu hình đúng cách"
+          );
           return;
         }
       }
       // Transform formSchema to match backend structure
       const transformedFormSchema = {
         version: 1,
-        fields: formSchema.fields.map(field => ({
+        fields: formSchema.fields.map((field) => ({
           key: field.key,
           label: field.label,
           type: field.type,
@@ -196,17 +254,17 @@ const FormBuilder = ({ templateId }) => {
           order: field.order || 0,
           readOnly: field.readOnly || false,
           defaultValue: field.defaultValue,
-          options: (field.options || []).map(option => ({
+          options: (field.options || []).map((option) => ({
             value: option.value,
             label: option.label,
             disabled: option.disabled || false,
-            meta: option.meta || {}
+            meta: option.meta || {},
           })),
           ui: {
             colSpan: field.ui?.colSpan || 12,
             width: field.ui?.width,
             component: field.ui?.component,
-            rows: field.ui?.rows
+            rows: field.ui?.rows,
           },
           validation: {
             required: field.validation?.required || false,
@@ -219,12 +277,12 @@ const FormBuilder = ({ templateId }) => {
             maxDate: field.validation?.maxDate,
             precision: field.validation?.precision,
             unique: field.validation?.unique,
-            errorMessage: field.validation?.errorMessage
+            errorMessage: field.validation?.errorMessage,
           },
           visibility: field.visibility,
           repeatConfig: field.repeatConfig,
           subFields: field.subFields || [],
-          meta: field.meta || {}
+          meta: field.meta || {},
         })),
         // layout: formSchema.layout,
         // permissions: {},
@@ -232,43 +290,49 @@ const FormBuilder = ({ templateId }) => {
       };
 
       // Transform workflowSteps to match backend structure
-      const transformedWorkflows = workflowSteps.map(step => ({
+      const transformedWorkflows = workflowSteps.map((step) => ({
         stepOrder: step.stepOrder,
         departmentId: step.departmentId,
-        stepName: step.stepName
+        stepName: step.stepName,
         // approverId will be set when user submits the form, not during template creation
       }));
 
       const formDataToSave = {
         name: templateName || `Form Template ${Date.now()}`,
-        description: templateDescription || 'Form created from frontend',
+        description: templateDescription || "Form created from frontend",
         isActive: true,
         createdById: user?.id || 1, // Use actual user ID from auth context
         dueInDays: dueInDays ? Number(dueInDays) : null,
         formSchema: transformedFormSchema,
-        approvalWorkflows: transformedWorkflows
+        approvalWorkflows: transformedWorkflows,
       };
 
-      console.log('🚀 Sending data to backend:', formDataToSave);
-      console.log('🎯 Backend URL:', apiClient.defaults.baseURL);
-      console.log('👤 User context:', user);
+      console.log("🚀 Sending data to backend:", formDataToSave);
+      console.log("🎯 Backend URL:", apiClient.defaults.baseURL);
+      console.log("👤 User context:", user);
 
       let response;
       if (selectedTemplate) {
         // Update existing template
-        console.log('📝 Updating template:', selectedTemplate);
-        response = await apiClient.put(`/form-templates/${selectedTemplate}`, formDataToSave);
-        console.log('✅ Update successful:', response);
+        console.log("📝 Updating template:", selectedTemplate);
+        response = await apiClient.put(
+          `/form-templates/${selectedTemplate}`,
+          formDataToSave
+        );
+        console.log("✅ Update successful:", response);
       } else {
         // Create new template
-        console.log('➕ Creating new template...');
-        console.log('🔗 POST URL:', '/form-templates');
-        console.log('📤 Request payload:', JSON.stringify(formDataToSave, null, 2));
-        
-        response = await apiClient.post('/form-templates', formDataToSave);
-        console.log('✅ Create successful:', response);
-        console.log('📥 Response data:', response.data);
-        
+        console.log("➕ Creating new template...");
+        console.log("🔗 POST URL:", "/form-templates");
+        console.log(
+          "📤 Request payload:",
+          JSON.stringify(formDataToSave, null, 2)
+        );
+
+        response = await apiClient.post("/form-templates", formDataToSave);
+        console.log("✅ Create successful:", response);
+        console.log("📥 Response data:", response.data);
+
         if (response?.data?.id) {
           setSelectedTemplate(response.data.id);
           // Reload templates to get fresh data
@@ -276,55 +340,73 @@ const FormBuilder = ({ templateId }) => {
         }
       }
 
-      // Show success message and navigate back
-      alert('✅ Form schema saved successfully!');
-      
-      // Navigate to form template management page
-      setTimeout(() => {
-        navigate('/admin/form-templates');
-      }, 500);
-        
+      showPopup(
+        'success', 
+        'Thành công', 
+        'biểu mẫu đã được lưu thành công!', 
+        null, 
+        true,
+        () => navigate('/admin/form-templates') // Callback khi popup đóng
+      );
     } catch (error) {
-      console.error('❌ Network/API Error:', error);
-      console.error('Error message:', error.message);
-      console.error('Error code:', error.code);
-      console.error('Response data:', error.response?.data);
-      console.error('Response status:', error.response?.status);
-      console.error('Request config:', error.config);
-      
+      console.error("❌ Network/API Error:", error);
+      console.error("Error message:", error.message);
+      console.error("Error code:", error.code);
+      console.error("Response data:", error.response?.data);
+      console.error("Response status:", error.response?.status);
+      console.error("Request config:", error.config);
+
       // Handle specific error types
-      if (error.message === 'Network Error' || error.code === 'NETWORK_ERROR') {
-        alert('❌ Network Error: Cannot connect to server. Please check:\n' +
-              '1. Backend server is running on port 8080\n' +
-              '2. Internet connection is stable\n' +
-              '3. CORS is properly configured');
-      } else if (error.response?.status >= 200 && error.response?.status < 300) {
+      if (error.message === "Network Error" || error.code === "NETWORK_ERROR") {
+        showPopup(
+          "error",
+          "Lỗi mạng",
+          "Không thể kết nối đến máy chủ. Vui lòng kiểm tra:\n1. Máy chủ backend đang chạy trên cổng 8080\n2. Kết nối internet ổn định\n3. CORS đã được cấu hình đúng cách"
+        );
+      } else if (
+        error.response?.status >= 200 &&
+        error.response?.status < 300
+      ) {
         // Check if it's actually a successful response with weird error handling
-        console.log('✅ Actually successful despite error thrown');
-        alert('✅ Form saved successfully!');
-        
+        console.log("✅ Actually successful despite error thrown");
+        showPopup(
+          "success",
+          "Thành công",
+          "biểu mẫu đã được lưu thành công!",
+          null,
+          true
+        );
+
         // Still try to update state if response contains data
         if (error.response?.data?.id && !selectedTemplate) {
           setSelectedTemplate(error.response.data.id);
           await reloadTemplates();
         }
-        
+
         // Navigate back on success
         setTimeout(() => {
-          navigate('/admin/form-templates');
+          navigate("/admin/form-templates");
         }, 500);
       } else if (error.response?.status === 404) {
-        alert('❌ API endpoint not found. Please check backend server.');
+        showPopup(
+          "error",
+          "Lỗi",
+          "Không tìm thấy API endpoint. Vui lòng kiểm tra máy chủ backend."
+        );
       } else if (error.response?.status === 500) {
-        alert('❌ Server error. Please check backend logs.');
+        showPopup(
+          "error",
+          "Lỗi máy chủ",
+          "Lỗi máy chủ. Vui lòng kiểm tra nhật ký backend."
+        );
       } else {
-        let errorMsg = 'Failed to save form schema';
+        let errorMsg = "Không thể lưu biểu mẫu";
         if (error.response?.data?.message) {
           errorMsg = error.response.data.message;
         } else if (error.message) {
           errorMsg = error.message;
         }
-        alert(`❌ ${errorMsg}`);
+        showPopup("error", "Lỗi", errorMsg);
       }
     } finally {
       setIsLoading(false);
@@ -333,28 +415,43 @@ const FormBuilder = ({ templateId }) => {
 
   const handleSubmitForm = async () => {
     try {
-      const response = await apiClient.post(`/form-templates/${selectedTemplate}/responses`, {
-        formData: formData,
-        submittedBy: user?.id || 1 // Use actual user ID from auth context
-      });
-      console.log('✅ Form submitted successfully:', response);
-      alert('✅ Form submitted successfully!');
+      const response = await apiClient.post(
+        `/form-templates/${selectedTemplate}/responses`,
+        {
+          formData: formData,
+          submittedBy: user?.id || 1, // Use actual user ID from auth context
+        }
+      );
+      console.log("✅ Form submitted successfully:", response);
+      showPopup(
+        "success",
+        "Thành công",
+        "Biểu mẫu đã được gửi thành công!",
+        null,
+        true
+      );
     } catch (error) {
-      console.error('❌ Failed to submit form:', error);
-      console.error('Response data:', error.response?.data);
-      console.error('Response status:', error.response?.status);
-      
+      console.error("❌ Failed to submit form:", error);
+      console.error("Response data:", error.response?.data);
+      console.error("Response status:", error.response?.status);
+
       // Check if it's actually successful
       if (error.response?.status >= 200 && error.response?.status < 300) {
-        alert('✅ Form submitted successfully!');
+        showPopup(
+          "success",
+          "Thành công",
+          "Biểu mẫu đã được gửi thành công!",
+          null,
+          true
+        );
       } else {
-        let errorMsg = 'Failed to submit form';
+        let errorMsg = "Không thể gửi biểu mẫu";
         if (error.response?.data?.message) {
           errorMsg = error.response.data.message;
         } else if (error.message) {
           errorMsg = error.message;
         }
-        alert(`❌ ${errorMsg}`);
+        showPopup("error", "Lỗi", errorMsg);
       }
     }
   };
@@ -369,16 +466,16 @@ const FormBuilder = ({ templateId }) => {
       label: `${type.charAt(0).toUpperCase() + type.slice(1)} Field`,
       type,
       validation: {},
-      ui: { colSpan: 12 }
+      ui: { colSpan: 12 },
     };
 
     // Thêm field mới vào array và set editing index
     const newFields = [...formSchema.fields, newField];
     setFormSchema({
       ...formSchema,
-      fields: newFields
+      fields: newFields,
     });
-    
+
     // Set editing index cho field mới vừa tạo
     setEditingFieldIndex(newFields.length - 1);
   };
@@ -390,7 +487,10 @@ const FormBuilder = ({ templateId }) => {
   const handleSaveStep = (stepConfig) => {
     if (editingStepIndex !== null) {
       const newSteps = [...workflowSteps];
-      newSteps[editingStepIndex] = { ...stepConfig, id: workflowSteps[editingStepIndex].id };
+      newSteps[editingStepIndex] = {
+        ...stepConfig,
+        id: workflowSteps[editingStepIndex].id,
+      };
       setWorkflowSteps(newSteps);
     }
     setEditingStepIndex(null);
@@ -401,12 +501,15 @@ const FormBuilder = ({ templateId }) => {
   };
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-screen text-lg">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen text-lg">
+        Loading...
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white rounded-xl shadow-sm pt-4 max-h-full">
-
       <div className="flex justify-between items-center pb-4 px-4 shadow-xs border-b border-gray-300 flex-shrink-0">
         {/* Left section: Close button and title */}
         <div className="flex items-center gap-4">
@@ -415,28 +518,30 @@ const FormBuilder = ({ templateId }) => {
           </button>
           <div className="flex flex-col border-l border-gray-300 pl-4">
             <h2 className="text-xl font-semibold">Form Builder</h2>
-            <span className="text-xs text-gray-500">Add and customize forms for your needs</span>
+            <span className="text-xs text-gray-500">
+              Add and customize forms for your needs
+            </span>
           </div>
         </div>
 
         {/* Center section: Tabs */}
         <div className="flex border border-gray-300 rounded-lg overflow-hidden">
           <button
-            onClick={() => setActiveTab('fields')}
+            onClick={() => setActiveTab("fields")}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'fields'
-                ? 'bg-[#5e83ae] text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
+              activeTab === "fields"
+                ? "bg-[#1976d2] text-white"
+                : "bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
             Fields
           </button>
           <button
-            onClick={() => setActiveTab('workflow')}
+            onClick={() => setActiveTab("workflow")}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'workflow'
-                ? 'bg-[#5e83ae] text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
+              activeTab === "workflow"
+                ? "bg-[#1976d2] text-white"
+                : "bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
             Workflow
@@ -451,7 +556,7 @@ const FormBuilder = ({ templateId }) => {
             className={`flex items-center gap-2 border px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               isPreviewMode
                 ? "border-red-500 text-red-500 hover:bg-red-50"
-                : "border-[#5e83ae] text-[#5e83ae] hover:bg-gray-100"
+                : "border-[#1976d2] text-[#1976d2] hover:bg-gray-100"
             }`}
           >
             {isPreviewMode ? <MdClose size={18} /> : <MdPreview size={18} />}
@@ -461,7 +566,7 @@ const FormBuilder = ({ templateId }) => {
           {/* Save / Submit */}
           {isPreviewMode ? (
             <button
-              onClick={handleSaveForm}
+              onClick={handleSubmitForm}
               className="flex items-center gap-2 border border-green-600 text-green-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors"
             >
               <MdCheckCircle size={18} />
@@ -471,17 +576,17 @@ const FormBuilder = ({ templateId }) => {
             <>
               {/* Cancel Button */}
               <button
-                onClick={() => navigate('/admin/form-templates')}
+                onClick={() => navigate("/admin/form-templates")}
                 className="flex items-center gap-2 border border-gray-400 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 <MdClose size={18} />
                 Cancel
               </button>
-              
+
               {/* Save Button */}
               <button
                 onClick={handleSaveForm}
-                className="flex items-center gap-2 border border-[#5e83ae] text-[#5e83ae] px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 border border-[#1976d2] text-[#1976d2] px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
               >
                 <MdSave size={18} />
                 Save
@@ -492,8 +597,7 @@ const FormBuilder = ({ templateId }) => {
       </div>
 
       <div className="flex flex-1 min-h-0">
-
-        <div className="flex flex-1 min-h-0 flex-col">  
+        <div className="flex flex-1 min-h-0 flex-col">
           {isPreviewMode ? (
             // Preview mode: show both fields and workflow
             <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
@@ -501,7 +605,10 @@ const FormBuilder = ({ templateId }) => {
               <div className="p-4 border-gray-200">
                 <div className="flex gap-4">
                   <div className="flex flex-col">
-                    <label htmlFor="templateName" className="mb-1 font-semibold">
+                    <label
+                      htmlFor="templateName"
+                      className="mb-1 font-semibold"
+                    >
                       Template Name<span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
@@ -511,13 +618,17 @@ const FormBuilder = ({ templateId }) => {
                       value={templateName}
                       onChange={(e) => setTemplateName(e.target.value)}
                       disabled={isPreviewMode}
-                      className="px-3 py-2 border border-gray-300 rounded min-w-[200px] focus:outline-none focus:ring-2 focus:ring-[#5e83ae]"
+                      className="px-3 py-2 border border-gray-300 rounded min-w-[200px] focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
                     />
                   </div>
 
                   <div className="flex flex-col flex-1">
-                    <label htmlFor="templateDescription" className="mb-1 font-semibold">
-                      Template Description<span className="text-red-500 ml-1">*</span>
+                    <label
+                      htmlFor="templateDescription"
+                      className="mb-1 font-semibold"
+                    >
+                      Template Description
+                      <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
                       id="templateDescription"
@@ -526,7 +637,7 @@ const FormBuilder = ({ templateId }) => {
                       value={templateDescription}
                       onChange={(e) => setTemplateDescription(e.target.value)}
                       disabled={isPreviewMode}
-                      className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5e83ae]"
+                      className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
                     />
                   </div>
                 </div>
@@ -545,24 +656,34 @@ const FormBuilder = ({ templateId }) => {
                   addFieldFromToolbox={addFieldFromToolbox}
                 />
               </div>
-              
+
               {/* Workflow Preview */}
               {workflowSteps.length > 0 && (
                 <div className="flex-1 p-4 border-gray-200">
-                  <h3 className="text-md font-semibold mb-4">Approval Workflow</h3>
+                  <h3 className="text-md font-semibold mb-4">
+                    Approval Workflow
+                  </h3>
                   <div className="grid gap-4">
                     {workflowSteps.map((step, index) => {
-                      const department = departments.find(d => d.id === step.departmentId);
+                      const department = departments.find(
+                        (d) => d.id === step.departmentId
+                      );
                       return (
-                        <div key={step.id || index} className="p-4 bg-white border border-gray-300 rounded-lg">
+                        <div
+                          key={step.id || index}
+                          className="p-4 bg-white border border-gray-300 rounded-lg"
+                        >
                           <div className="flex items-center gap-3 mb-2">
                             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
                               Step {step.stepOrder}
                             </span>
-                            <span className="text-sm font-medium text-gray-900">{step.stepName}</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {step.stepName}
+                            </span>
                           </div>
                           <div className="text-sm text-gray-600">
-                            Department: {department?.name || 'Unknown Department'}
+                            Department:{" "}
+                            {department?.name || "Unknown Department"}
                           </div>
                         </div>
                       );
@@ -586,12 +707,15 @@ const FormBuilder = ({ templateId }) => {
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
                     disabled={isPreviewMode}
-                    className="px-3 py-2 border border-gray-300 rounded min-w-[200px] focus:outline-none focus:ring-2 focus:ring-[#5e83ae]"
+                    className="px-3 py-2 border border-gray-300 rounded min-w-[200px] focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
                   />
                 </div>
 
                 <div className="flex flex-col flex-1">
-                  <label htmlFor="templateDescription" className="mb-1 font-semibold">
+                  <label
+                    htmlFor="templateDescription"
+                    className="mb-1 font-semibold"
+                  >
                     Mô tả<span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
@@ -601,7 +725,7 @@ const FormBuilder = ({ templateId }) => {
                     value={templateDescription}
                     onChange={(e) => setTemplateDescription(e.target.value)}
                     disabled={isPreviewMode}
-                    className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5e83ae]"
+                    className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
                   />
                 </div>
 
@@ -616,12 +740,12 @@ const FormBuilder = ({ templateId }) => {
                     placeholder="e.g., 7"
                     value={dueInDays}
                     onChange={(e) => setDueInDays(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded min-w-[120px] focus:outline-none focus:ring-2 focus:ring-[#5e83ae]"
+                    className="px-3 py-2 border border-gray-300 rounded min-w-[120px] focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
                   />
                 </div>
               </div>
 
-              {activeTab === 'fields' ? (
+              {activeTab === "fields" ? (
                 <FormCanvas
                   formSchema={formSchema}
                   setFormSchema={setFormSchema}
@@ -644,25 +768,28 @@ const FormBuilder = ({ templateId }) => {
         </div>
 
         {/* Right panel for editing */}
-        {!isPreviewMode && (
-          activeTab === 'fields' ? (
+        {!isPreviewMode &&
+          (activeTab === "fields" ? (
             editingFieldIndex !== null ? (
               <FieldConfigPanel
                 field={formSchema.fields[editingFieldIndex]}
                 onSave={(fieldConfig) => {
-                  console.log('FieldConfigPanel onSave called with:', fieldConfig);
+                  console.log(
+                    "FieldConfigPanel onSave called with:",
+                    fieldConfig
+                  );
                   const newFields = [...formSchema.fields];
                   // Đảm bảo field có key và label trước khi save
                   if (fieldConfig.key && fieldConfig.label) {
                     newFields[editingFieldIndex] = fieldConfig;
                     setFormSchema({ ...formSchema, fields: newFields });
-                    console.log('Field saved successfully:', fieldConfig);
+                    console.log("Field saved successfully:", fieldConfig);
                   } else {
-                    console.log('Field missing required fields (key or label)');
+                    console.log("Field missing required fields (key or label)");
                   }
                 }}
                 onCancel={() => {
-                  console.log('FieldConfigPanel onCancel called');
+                  console.log("FieldConfigPanel onCancel called");
                   setEditingFieldIndex(null);
                 }}
                 existingFields={formSchema.fields}
@@ -670,26 +797,37 @@ const FormBuilder = ({ templateId }) => {
             ) : (
               <Toolbox onAddField={addFieldFromToolbox} />
             )
+          ) : // Workflow tab
+          editingStepIndex !== null ? (
+            <WorkflowConfigPanel
+              step={workflowSteps[editingStepIndex]}
+              onSave={handleSaveStep}
+              onCancel={handleCancelStepEdit}
+              departments={departments}
+            />
           ) : (
-            // Workflow tab
-            editingStepIndex !== null ? (
-              <WorkflowConfigPanel
-                step={workflowSteps[editingStepIndex]}
-                onSave={handleSaveStep}
-                onCancel={handleCancelStepEdit}
-                departments={departments}
-              />
-            ) : (
-              <div className="w-80 bg-gray-50 p-4 border-l border-gray-200 h-full overflow-y-auto">
-                <h3 className="font-semibold text-gray-800 mb-4">Workflow Tools</h3>
-                <p className="text-sm text-gray-600">
-                  Click on a workflow step to edit its properties, or use the "Add Workflow Step" button to create new steps.
-                </p>
-              </div>
-            )
-          )
-        )}
+            <div className="w-80 bg-gray-50 p-4 border-l border-gray-200 h-full overflow-y-auto">
+              <h3 className="font-semibold text-gray-800 mb-4">
+                Workflow Tools
+              </h3>
+              <p className="text-sm text-gray-600">
+                Click on a workflow step to edit its properties, or use the "Add
+                Workflow Step" button to create new steps.
+              </p>
+            </div>
+          ))}
       </div>
+
+      {/* Thêm Popup component */}
+      <Popup
+        isOpen={popup.isOpen}
+        onClose={closePopup}
+        type={popup.type}
+        title={popup.title}
+        message={popup.message}
+        onConfirm={popup.onConfirm}
+        autoClose={popup.autoClose}
+      />
     </div>
   );
 };

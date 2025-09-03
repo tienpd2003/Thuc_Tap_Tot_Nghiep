@@ -76,7 +76,7 @@ const WorkflowConfigPanel = ({ step, onSave, onCancel, departments = [] }) => {
             onChange={(e) =>
               handleConfigChange({ stepOrder: parseInt(e.target.value || 1) })
             }
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae]"
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2]"
           />
         </div>
 
@@ -90,7 +90,7 @@ const WorkflowConfigPanel = ({ step, onSave, onCancel, departments = [] }) => {
             value={config.stepName || ""}
             onChange={(e) => handleConfigChange({ stepName: e.target.value })}
             placeholder="e.g., Manager Approval"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae]"
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2]"
           />
         </div>
 
@@ -137,7 +137,7 @@ const WorkflowConfigPanel = ({ step, onSave, onCancel, departments = [] }) => {
                 >
                   <span>{dept.name}</span>
                   {config.departmentId === dept.id && (
-                    <svg className="w-4 h-4 text-[#5e83ae]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <svg className="w-4 h-4 text-[#1976d2]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                       <path d="M20 6L9 17l-5-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}

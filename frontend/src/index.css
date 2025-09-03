@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 :root {
-  --primary-color: #5e83ae;       /* Màu chính (dùng cho button, background, brand color) */
+  --primary-color: #1976d2;       /* Màu chính (dùng cho button, background, brand color) */
   --primary-dark: #4a6b8a;        /* Màu chính đậm (hover, active state) */
   --primary-light: #7a9bc4;       /* Màu chính nhạt (background phụ, highlight) */
 

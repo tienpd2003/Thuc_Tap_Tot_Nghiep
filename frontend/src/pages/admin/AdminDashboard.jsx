@@ -762,7 +762,7 @@ export default AdminDashboard;
 //             <tbody className="bg-white divide-y divide-gray-200">
 //               {recentTickets.map((ticket) => (
 //                 <tr key={ticket.id} className="hover:bg-gray-50">
-//                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#5e83ae]">
+//                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#1976d2]">
 //                     {ticket.id}
 //                   </td>
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -804,7 +804,7 @@ export default AdminDashboard;
 //             <h3 className="text-lg font-semibold text-gray-900">Create New Ticket</h3>
 //           </div>
 //           <p className="text-gray-600 mb-6">Create a new support ticket for users</p>
-//           <button className="w-full bg-[#5e83ae] text-white px-4 py-3 rounded-lg hover:bg-[#4a6b8a] transition-colors font-medium">
+//           <button className="w-full bg-[#1976d2] text-white px-4 py-3 rounded-lg hover:bg-[#4a6b8a] transition-colors font-medium">
 //             Create Ticket
 //           </button>
 //         </div>
@@ -817,7 +817,7 @@ export default AdminDashboard;
 //             <h3 className="text-lg font-semibold text-gray-900">Manage Tickets</h3>
 //           </div>
 //           <p className="text-gray-600 mb-6">View and manage all tickets in the system</p>
-//           <button className="w-full bg-[#5e83ae] text-white px-4 py-3 rounded-lg hover:bg-[#4a6b8a] transition-colors font-medium">
+//           <button className="w-full bg-[#1976d2] text-white px-4 py-3 rounded-lg hover:bg-[#4a6b8a] transition-colors font-medium">
 //             View All
 //           </button>
 //         </div>
@@ -830,7 +830,7 @@ export default AdminDashboard;
 //             <h3 className="text-lg font-semibold text-gray-900">Reports</h3>
 //           </div>
 //           <p className="text-gray-600 mb-6">View detailed reports and analytics</p>
-//           <button className="w-full bg-[#5e83ae] text-white px-4 py-3 rounded-lg hover:bg-[#4a6b8a] transition-colors font-medium">
+//           <button className="w-full bg-[#1976d2] text-white px-4 py-3 rounded-lg hover:bg-[#4a6b8a] transition-colors font-medium">
 //             View Reports
 //           </button>
 //         </div>

@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <MdHeadsetMic className="h-5 w-5 text-[#5e83ae]" />
+            <MdHeadsetMic className="h-5 w-5 text-[#1976d2]" />
             <span className="text-sm text-gray-600">TicketHub v1.0</span>
           </div>
           <div className="text-sm text-gray-500">

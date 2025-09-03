@@ -146,7 +146,7 @@ const WorkflowTab = ({ workflowSteps, setWorkflowSteps, departments, onEditStep 
       <div className="flex justify-between items-center">
         <h3 className="text-md font-semibold">Workflow Steps<span className="text-red-500 ml-1">*</span></h3>
         <button
-          className="cursor-pointer px-3 py-2 rounded-lg bg-[#5e83ae] hover:bg-[#4a6b8a] text-white justify-center flex gap-1"
+          className="cursor-pointer px-3 py-2 rounded-lg bg-[#1976d2] hover:bg-[#4a6b8a] text-white justify-center flex gap-1"
           onClick={addStep}
         >
           <FiPlus size={20} />

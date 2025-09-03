@@ -21,18 +21,20 @@ public class FormTemplateFilterResponse {
     private Boolean isActive;
     private String createdByFullName;
     private String createdByUsername;
+    private Integer dueInDays;
     private String createdAt;
     private String updatedAt;
 
     private List<String> approvalDepartments; // sắp xếp theo stepOrder
 
-    public FormTemplateFilterResponse(Long id, String name, String description, Boolean isActive,
+    public FormTemplateFilterResponse(Long id, String name, String description, Boolean isActive, Integer dueInDays,
                                       String createdByFullName, String createdByUsername,
                                       LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.isActive = isActive;
+        this.dueInDays = dueInDays;
         this.createdByFullName = createdByFullName;
         this.createdByUsername = createdByUsername;
         DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;

@@ -94,7 +94,7 @@ function Login() {
         {/* Logo and Title */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#5e83ae] to-[#4a6b8a] rounded-xl shadow-lg">
+            <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#1976d2] to-[#4a6b8a] rounded-xl shadow-lg">
               <MdHeadsetMic className="h-8 w-8 text-white" />
             </div>
           </div>
@@ -145,7 +145,7 @@ function Login() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae] transition-colors placeholder-gray-400 text-sm"
+                  className="block w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] transition-colors placeholder-gray-400 text-sm"
                   placeholder="Enter your username"
                   required
                   disabled={loading}
@@ -167,7 +167,7 @@ function Login() {
                   type={passwordVisible ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5e83ae] focus:border-[#5e83ae] transition-colors placeholder-gray-400 text-sm"
+                  className="block w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] transition-colors placeholder-gray-400 text-sm"
                   placeholder="Enter your password"
                   required
                   disabled={loading}
@@ -196,7 +196,7 @@ function Login() {
                 />
                 <div className="flex items-center justify-center gap-2 cursor-pointer">
                   {rememberMe ? (
-                    <FaCheckSquare className="h-4 w-4 text-[#5e83ae]" />
+                    <FaCheckSquare className="h-4 w-4 text-[#1976d2]" />
                   ) : (
                     <FaRegSquare className="h-4 w-4 text-gray-400" />
                   )}
@@ -215,7 +215,7 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-lg font-medium transition-all duration-200 bg-gradient-to-r from-[#5e83ae] to-[#4a6b8a] text-white shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full py-2.5 rounded-lg font-medium transition-all duration-200 bg-gradient-to-r from-[#1976d2] to-[#4a6b8a] text-white shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading && <FaSpinner className="h-4 w-4 animate-spin" />}
               {loading ? "Đang đăng nhập..." : "Đăng nhập"}

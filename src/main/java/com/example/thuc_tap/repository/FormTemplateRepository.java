@@ -27,6 +27,7 @@ public interface FormTemplateRepository extends JpaRepository<FormTemplate, Long
             ft.name,
             ft.description,
             ft.isActive,
+            ft.dueInDays,
             ft.createdBy.fullName,
             ft.createdBy.username,
             ft.createdAt,

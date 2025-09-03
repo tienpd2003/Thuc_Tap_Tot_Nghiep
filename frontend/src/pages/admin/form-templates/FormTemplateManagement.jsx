@@ -35,7 +35,7 @@ export default function FormTemplateManagement() {
         <h1 className="text-[34px] font-bold text-gray-800">Quản lý form mẫu</h1>
         <button
           onClick={() => navigate("/admin/form-templates/create")}
-          className="cursor-pointer flex justify-center items-center gap-2 outline-none font-medium transition-all duration-200 text-[#5e83ae] hover:text-[#4a6b8a]"
+          className="cursor-pointer flex justify-center items-center gap-2 outline-none font-medium transition-all duration-200 text-[#1976d2] hover:text-[#4a6b8a]"
         >
           <MdOutlineNoteAdd /> 
           New Form Template
