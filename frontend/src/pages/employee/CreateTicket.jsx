@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, FileText, ChevronRight, Users, Search, Eye } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getFormTemplates, getFormTemplate } from '../../services/formTemplateService';
+import { getActiveFormTemplates, getFormTemplate } from '../../services/formTemplateService';
 import { userService } from '../../services';
 import { apiClient } from '../../services';
 import { ticketService } from '../../services/ticketService';
@@ -52,7 +52,7 @@ export default function CreateTicket() {
         setError(''); // Clear any previous errors
         
         console.log('🔄 Fetching templates...');
-        const response = await getFormTemplates();
+        const response = await getActiveFormTemplates();
         console.log('✅ Templates response:', response);
         
         // Handle pagination response

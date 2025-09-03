@@ -66,4 +66,22 @@ public interface FormTemplateRepository extends JpaRepository<FormTemplate, Long
         ORDER BY awf.stepOrder
     """)
     List<String> findApprovalDepartmentsByFormTemplateId(@Param("formTemplateId") Long formTemplateId);
+
+    @Query("""
+        SELECT DISTINCT new com.example.thuc_tap.dto.response.FormTemplateFilterResponse(
+            ft.id,
+            ft.name,
+            ft.description,
+            ft.isActive,
+            ft.dueInDays,
+            ft.createdBy.fullName,
+            ft.createdBy.username,
+            ft.createdAt,
+            ft.updatedAt)
+        FROM FormTemplate ft
+        WHERE ft.isActive = TRUE
+    """)
+    Page<FormTemplateFilterResponse> findActiveFormTemplates(Pageable pageable);
+
+    List<FormTemplate> findByIsActiveTrue();
 }

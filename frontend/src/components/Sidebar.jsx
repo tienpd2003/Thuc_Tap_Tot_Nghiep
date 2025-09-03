@@ -135,10 +135,10 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
         ))}
       </List>
 
-      <Divider sx={{ my: 1 }} />
+      {/* <Divider sx={{ my: 1 }} /> */}
 
       {/* System Functions */}
-      <Box sx={{ px: 2, py: 1 }}>
+      {/* <Box sx={{ px: 2, py: 1 }}>
         <Typography
           variant="overline"
           sx={{
@@ -150,9 +150,9 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
         >
           HỆ THỐNG
         </Typography>
-      </Box>
+      </Box> */}
 
-      <List sx={{ px: 1 }}>
+      {/* <List sx={{ px: 1 }}>
         {systemMenuItems.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
@@ -188,7 +188,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
             </ListItemButton>
           </ListItem>
         ))}
-      </List>
+      </List> */}
 
       {/* Footer */}
       <Box sx={{ mt: 'auto', p: 2 }}>

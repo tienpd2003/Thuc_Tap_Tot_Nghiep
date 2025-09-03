@@ -258,4 +258,15 @@ public class FormTemplateService {
             throw new ConflictException("Không thể xóa form do đã được sử dụng, hãy hủy kích hoạt form thay vì xóa.");
         }
     }
+
+    public Page<FormTemplateFilterResponse> getActiveFormTemplates(FormTemplateFilterRequest filter) {
+        Pageable pageable = PageRequest.of(
+                filter.getPage(),
+                filter.getPageSize(),
+                Sort.by(Sort.Direction.fromString(filter.getSortDirection()), filter.getSortBy())
+        );
+        Page<FormTemplateFilterResponse> responsePage = formTemplateRepository.findActiveFormTemplates(pageable);
+
+        return responsePage;
+    }
 }
