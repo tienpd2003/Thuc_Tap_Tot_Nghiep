@@ -77,13 +77,11 @@ public class ApprovalController {
         return ResponseEntity.ok().build();
     }
 
-//    @PostMapping("/{ticketId}/reject")
-//    public ResponseEntity<Void> reject(@PathVariable Long ticketId, @RequestBody RejectRequest req) {
-//        Long actingUserId = getCurrentUserId();
-//        // Use the new method that works with TicketApproval
-//        approvalService.rejectTicketApproval(req.getTaskId(), req.getReason(), actingUserId);
-//        return ResponseEntity.ok().build();
-//    }
+    @PostMapping("/{ticketId}/reject")
+    public ResponseEntity<Void> reject(@PathVariable Long ticketId, @RequestBody RejectRequest req) {
+        approvalService.rejectTicketApproval(req.getTaskId(), req.getReason(), req.getActingUserId());
+        return ResponseEntity.ok().build();
+    }
 
 //    @PostMapping("/{ticketId}/forward")
 //    public ResponseEntity<Void> forward(@PathVariable Long ticketId, @RequestBody ForwardRequest req) {

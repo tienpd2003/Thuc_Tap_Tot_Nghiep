@@ -3,6 +3,7 @@ package com.example.thuc_tap.dto.request;
 public class RejectRequest {
     private Long taskId;
     private String reason;
+    private Long actingUserId;
     
     // Getters and Setters
     public Long getTaskId() {
@@ -19,5 +20,13 @@ public class RejectRequest {
     
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    public Long getActingUserId() {
+        return actingUserId;
+    }
+
+    public void setActingUserId(Long actingUserId) {
+        this.actingUserId = actingUserId;
     }
 }
