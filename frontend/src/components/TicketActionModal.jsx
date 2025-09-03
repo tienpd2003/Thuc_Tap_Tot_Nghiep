@@ -70,7 +70,7 @@ export default function TicketActionModal({
       if (action === 'approve') {
         await approveTicket(ticketId, taskId, formData.note, user?.id);
       } else if (action === 'reject') {
-        await rejectTicket(ticketId, taskId, formData.reason);
+        await rejectTicket(ticketId, taskId, formData.reason, user?.id);
       }
       
       onSuccess && onSuccess();
