@@ -30,6 +30,18 @@ const initialState = {
     userGrowth: [],
   },
   
+  // User growth statistics (NEW)
+  userGrowthStats: {
+    period: 'month',
+    data: [],
+  },
+  
+  // Recent users list (NEW)
+  recentUsers: {
+    data: [],
+    limit: 10,
+  },
+  
   // Daily trend data for charts
   dailyStats: {
     days: 7, // 7, 30, 365
@@ -43,6 +55,8 @@ const initialState = {
     departmentStats: false,
     roleStats: false,
     dailyStats: false,
+    userGrowthStats: false,
+    recentUsers: false,
   },
   
   // Error states
@@ -52,6 +66,8 @@ const initialState = {
     departmentStats: null,
     roleStats: null,
     dailyStats: null,
+    userGrowthStats: null,
+    recentUsers: null,
   },
   
   // UI state
@@ -85,6 +101,14 @@ const dashboardSlice = createSlice({
       state.loading.dailyStats = action.payload;
     },
 
+    setUserGrowthStatsLoading: (state, action) => {
+      state.loading.userGrowthStats = action.payload;
+    },
+
+    setRecentUsersLoading: (state, action) => {
+      state.loading.recentUsers = action.payload;
+    },
+
     // Error handling
     setQuickStatsError: (state, action) => {
       state.error.quickStats = action.payload;
@@ -109,6 +133,16 @@ const dashboardSlice = createSlice({
     setDailyStatsError: (state, action) => {
       state.error.dailyStats = action.payload;
       state.loading.dailyStats = false;
+    },
+
+    setUserGrowthStatsError: (state, action) => {
+      state.error.userGrowthStats = action.payload;
+      state.loading.userGrowthStats = false;
+    },
+
+    setRecentUsersError: (state, action) => {
+      state.error.recentUsers = action.payload;
+      state.loading.recentUsers = false;
     },    clearAllErrors: (state) => {
       state.error = initialState.error;
     },
@@ -147,6 +181,18 @@ const dashboardSlice = createSlice({
       state.error.dailyStats = null;
     },
 
+    setUserGrowthStats: (state, action) => {
+      state.userGrowthStats.data = action.payload;
+      state.loading.userGrowthStats = false;
+      state.error.userGrowthStats = null;
+    },
+
+    setRecentUsers: (state, action) => {
+      state.recentUsers.data = action.payload;
+      state.loading.recentUsers = false;
+      state.error.recentUsers = null;
+    },
+
     // Period and filter setters
     setSelectedPeriod: (state, action) => {
       state.selectedPeriod = action.payload;
@@ -182,6 +228,16 @@ const dashboardSlice = createSlice({
       state.error.dailyStats = null;
     },
 
+    resetUserGrowthStats: (state) => {
+      state.userGrowthStats.data = [];
+      state.error.userGrowthStats = null;
+    },
+
+    resetRecentUsers: (state) => {
+      state.recentUsers.data = [];
+      state.error.recentUsers = null;
+    },
+
     // Reset entire dashboard state
     resetDashboardState: () => initialState,
   },
@@ -193,23 +249,31 @@ export const {
   setDepartmentStatsLoading,
   setRoleStatsLoading,
   setDailyStatsLoading,
+  setUserGrowthStatsLoading,
+  setRecentUsersLoading,
   setQuickStatsError,
   setOverviewStatsError,
   setDepartmentStatsError,
   setRoleStatsError,
   setDailyStatsError,
+  setUserGrowthStatsError,
+  setRecentUsersError,
   clearAllErrors,
   setQuickStats,
   setOverviewStats,
   setDepartmentStats,
   setRoleStats,
   setDailyStats,
+  setUserGrowthStats,
+  setRecentUsers,
   setSelectedPeriod,
   setSelectedDays,
   resetOverviewStats,
   resetDepartmentStats,
   resetRoleStats,
   resetDailyStats,
+  resetUserGrowthStats,
+  resetRecentUsers,
   resetDashboardState,
 } = dashboardSlice.actions;
 
@@ -226,6 +290,17 @@ export const fetchUsersByRole = (period = 'month') => ({
 export const fetchOverviewStats = (period = 'month') => ({ 
   type: 'dashboard/fetchOverviewStats', 
   payload: { period } 
+});
+
+// NEW: Action creators for user growth and recent users
+export const fetchUserGrowthStats = (period = 'month') => ({ 
+  type: 'dashboard/fetchUserGrowthStats', 
+  payload: { period } 
+});
+
+export const fetchRecentUsers = (limit = 10) => ({ 
+  type: 'dashboard/fetchRecentUsers', 
+  payload: { limit } 
 });
 
 export default dashboardSlice.reducer;

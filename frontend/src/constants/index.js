@@ -28,11 +28,13 @@ export const API_ENDPOINTS = {
   ROLES: '/roles',
   ROLES_USERS: (id) => `/roles/${id}/users`,
   
-  // Admin Dashboard Stats (4 APIs)
+  // Admin Dashboard Stats (6 APIs)
   ADMIN_STATS_OVERVIEW: '/admin/stats/overview',
   ADMIN_STATS_DEPARTMENTS: '/admin/stats/departments',
   ADMIN_STATS_DAILY: '/admin/stats/daily',
   ADMIN_STATS_QUICK: '/admin/stats/quick',
+  ADMIN_STATS_USER_GROWTH: '/admin/stats/user-growth',
+  ADMIN_STATS_RECENT_USERS: '/admin/stats/recent-users',
   
   // Employee APIs
   EMPLOYEE_DASHBOARD: (employeeId) => `/employee/${employeeId}/dashboard`,

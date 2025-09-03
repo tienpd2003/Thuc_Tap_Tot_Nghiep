@@ -29,7 +29,7 @@ import {
   PersonAdd as PersonAddIcon
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchQuickStats, fetchUsersByDepartment, fetchUsersByRole, fetchOverviewStats } from '../../store/slices/dashboardSlice';
+import { fetchQuickStats, fetchUsersByDepartment, fetchUsersByRole, fetchOverviewStats, fetchUserGrowthStats, fetchRecentUsers } from '../../store/slices/dashboardSlice';
 import { 
   StatsCard, 
   TicketTrendChart, 
@@ -46,6 +46,8 @@ const AdminDashboard = () => {
     departmentStats, 
     roleStats, 
     overviewStats,
+    userGrowthStats,
+    recentUsers,
     loading, 
     error 
   } = useSelector((state) => state.dashboard);
@@ -61,6 +63,8 @@ const AdminDashboard = () => {
     dispatch(fetchOverviewStats(selectedPeriod));
     dispatch(fetchUsersByDepartment(selectedPeriod));
     dispatch(fetchUsersByRole(selectedPeriod));
+    dispatch(fetchUserGrowthStats(selectedPeriod));
+    dispatch(fetchRecentUsers(10)); // Load 10 recent users
   }, [dispatch, selectedPeriod]);
 
   // Use real API data from Redux state - no need for synthetic data processing here
@@ -82,14 +86,14 @@ const AdminDashboard = () => {
   const displayDepartmentStats = departmentData;
   
   
-  // Use user growth data from Redux state - processed in saga
-  const displayUserGrowthData = roleStats?.userGrowth || [];
+  // Use real API data for user growth data from Redux state
+  const displayUserGrowthData = userGrowthStats?.data || [];
 
   const handlePeriodChange = (event) => {
     setSelectedPeriod(event.target.value);
   };
 
-  const hasError = error?.quickStats || error?.departmentStats || error?.roleStats;
+  const hasError = error?.quickStats || error?.departmentStats || error?.roleStats || error?.userGrowthStats || error?.recentUsers;
 
   // Calculate efficiency percentage for display
   const calculateEfficiency = (completed, total) => {
@@ -329,7 +333,7 @@ const AdminDashboard = () => {
             <Box sx={{ p: 1 }}>
               <UserGrowthChart
                 data={displayUserGrowthData}
-                loading={loading?.roleStats}
+                loading={loading?.userGrowthStats}
               />
             </Box>
           </Paper>
@@ -511,72 +515,156 @@ const AdminDashboard = () => {
         </Box>
         <Box sx={{ overflow: 'auto' }}>
           <Grid container spacing={0} sx={{ p: 2 }}>
-            {[
-              { name: 'Nguyễn Văn A', role: 'Nhân viên', dept: 'Marketing', status: 'Hoạt động', time: '2 giờ trước' },
-              { name: 'Trần Thị B', role: 'Quản lý', dept: 'IT Department', status: 'Hoạt động', time: '1 ngày trước' },
-              { name: 'Lê Văn C', role: 'Nhân viên', dept: 'Human Resources', status: 'Vắng mặt', time: '2 ngày trước' },
-              { name: 'Phạm Văn D', role: 'Nhân viên', dept: 'Finance', status: 'Hoạt động', time: '3 ngày trước' },
-            ].map((user, index) => (
-              <Grid item xs={12} sm={6} md={3} key={index}>
-                <Box sx={{ 
-                  p: 2, 
-                  borderRadius: 1, 
-                  border: '1px solid', 
-                  borderColor: 'divider',
-                  m: 0.5
-                }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Avatar sx={{ mr: 1.5, bgcolor: ['#1976d2', '#2e7d32', '#ed6c02', '#9c27b0'][index % 4] }}>
-                      {user.name.charAt(0)}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {user.name}
-                      </Typography>
+            {recentUsers?.data && recentUsers.data.length > 0 ? (
+              recentUsers.data.map((user, index) => (
+                <Grid item xs={12} sm={6} md={3} key={user.id || index}>
+                  <Box sx={{ 
+                    p: 2, 
+                    borderRadius: 1, 
+                    border: '1px solid', 
+                    borderColor: 'divider',
+                    m: 0.5
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Avatar sx={{ mr: 1.5, bgcolor: ['#1976d2', '#2e7d32', '#ed6c02', '#9c27b0'][index % 4] }}>
+                        {user.name?.charAt(0) || user.employeeCode?.charAt(0) || 'U'}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {user.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {user.role}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Divider sx={{ my: 1 }} />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
                       <Typography variant="caption" color="text.secondary">
-                        {user.role}
+                        Phòng ban
+                      </Typography>
+                      <Chip 
+                        label={user.dept} 
+                        size="small" 
+                        sx={{ 
+                          height: 20, 
+                          fontSize: '0.7rem', 
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'primary.main',
+                          color: 'primary.main'
+                        }} 
+                      />
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary">
+                        Trạng thái
+                      </Typography>
+                      <Chip 
+                        label={user.status} 
+                        size="small"
+                        sx={{ 
+                          height: 20, 
+                          fontSize: '0.7rem', 
+                          bgcolor: user.status === 'Hoạt động' ? '#e8f5e9' : '#ffebee',
+                          color: user.status === 'Hoạt động' ? '#2e7d32' : '#d32f2f'
+                        }}
+                      />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'right' }}>
+                      {user.time}
+                    </Typography>
+                  </Box>
+                </Grid>
+              ))
+            ) : (
+              // Loading or empty state
+              loading?.recentUsers ? (
+                Array.from({ length: 4 }, (_, index) => (
+                  <Grid item xs={12} sm={6} md={3} key={index}>
+                    <Box sx={{ p: 2, borderRadius: 1, border: '1px solid', borderColor: 'divider', m: 0.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Avatar sx={{ mr: 1.5 }}>
+                          <LinearProgress />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2">Loading...</Typography>
+                          <Typography variant="caption" color="text.secondary">Loading...</Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Grid>
+                ))
+              ) : (
+                // Fallback data when no users found
+                [
+                  { name: 'Nguyễn Văn A', role: 'Nhân viên', dept: 'Marketing', status: 'Hoạt động', time: '2 giờ trước' },
+                  { name: 'Trần Thị B', role: 'Quản lý', dept: 'IT Department', status: 'Hoạt động', time: '1 ngày trước' },
+                  { name: 'Lê Văn C', role: 'Nhân viên', dept: 'Human Resources', status: 'Vắng mặt', time: '2 ngày trước' },
+                  { name: 'Phạm Văn D', role: 'Nhân viên', dept: 'Finance', status: 'Hoạt động', time: '3 ngày trước' },
+                ].map((user, index) => (
+                  <Grid item xs={12} sm={6} md={3} key={index}>
+                    <Box sx={{ 
+                      p: 2, 
+                      borderRadius: 1, 
+                      border: '1px solid', 
+                      borderColor: 'divider',
+                      m: 0.5
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Avatar sx={{ mr: 1.5, bgcolor: ['#1976d2', '#2e7d32', '#ed6c02', '#9c27b0'][index % 4] }}>
+                          {user.name.charAt(0)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {user.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {user.role}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Divider sx={{ my: 1 }} />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Phòng ban
+                        </Typography>
+                        <Chip 
+                          label={user.dept} 
+                          size="small" 
+                          sx={{ 
+                            height: 20, 
+                            fontSize: '0.7rem', 
+                            bgcolor: 'background.paper',
+                            border: '1px solid',
+                            borderColor: 'primary.main',
+                            color: 'primary.main'
+                          }} 
+                        />
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Trạng thái
+                        </Typography>
+                        <Chip 
+                          label={user.status} 
+                          size="small"
+                          sx={{ 
+                            height: 20, 
+                            fontSize: '0.7rem', 
+                            bgcolor: user.status === 'Hoạt động' ? '#e8f5e9' : '#ffebee',
+                            color: user.status === 'Hoạt động' ? '#2e7d32' : '#d32f2f'
+                          }}
+                        />
+                      </Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'right' }}>
+                        {user.time}
                       </Typography>
                     </Box>
-                  </Box>
-                  <Divider sx={{ my: 1 }} />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Phòng ban
-                    </Typography>
-                    <Chip 
-                      label={user.dept} 
-                      size="small" 
-                      sx={{ 
-                        height: 20, 
-                        fontSize: '0.7rem', 
-                        bgcolor: 'background.paper',
-                        border: '1px solid',
-                        borderColor: 'primary.main',
-                        color: 'primary.main'
-                      }} 
-                    />
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Trạng thái
-                    </Typography>
-                    <Chip 
-                      label={user.status} 
-                      size="small"
-                      sx={{ 
-                        height: 20, 
-                        fontSize: '0.7rem', 
-                        bgcolor: user.status === 'Hoạt động' ? '#e8f5e9' : '#ffebee',
-                        color: user.status === 'Hoạt động' ? '#2e7d32' : '#d32f2f'
-                      }}
-                    />
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'right' }}>
-                    {user.time}
-                  </Typography>
-                </Box>
-              </Grid>
-            ))}
+                  </Grid>
+                ))
+              )
+            )}
           </Grid>
         </Box>
       </Paper>

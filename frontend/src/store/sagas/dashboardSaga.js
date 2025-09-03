@@ -13,6 +13,12 @@ import {
   setOverviewStatsLoading,
   setOverviewStatsError,
   setOverviewStats,
+  setUserGrowthStatsLoading,
+  setUserGrowthStatsError,
+  setUserGrowthStats,
+  setRecentUsersLoading,
+  setRecentUsersError,
+  setRecentUsers,
 } from '../slices/dashboardSlice';
 
 // Quick Stats Saga
@@ -249,10 +255,69 @@ function* fetchOverviewStatsSaga(action) {
   }
 }
 
+// User Growth Stats Saga (NEW)
+function* fetchUserGrowthStatsSaga(action) {
+  try {
+    yield put(setUserGrowthStatsLoading(true));
+    const { period = 'month' } = action?.payload || {};
+    const response = yield call(dashboardService.getUserGrowthStats, period);
+    
+    // Transform UserGrowthStatsDto to chart format expected by UserGrowthChart
+    const transformedData = response.data?.map(growth => ({
+      month: growth.month || `Tháng ${new Date(growth.date).getMonth() + 1}`,
+      totalUsers: growth.totalUsers || 0,
+      newUsers: growth.newUsers || 0,
+      activeUsers: growth.activeUsers || 0,
+      date: growth.date,
+      dateString: growth.dateString,
+      dayOfWeek: growth.dayOfWeek,
+      growthRate: growth.growthRate || 0,
+    })) || [];
+    
+    yield put(setUserGrowthStats(transformedData));
+  } catch (error) {
+    console.error('Dashboard User Growth Stats Error:', error);
+    yield put(setUserGrowthStatsError(error.message || 'Lỗi tải dữ liệu tăng trưởng người dùng'));
+  }
+}
+
+// Recent Users Saga (NEW)
+function* fetchRecentUsersSaga(action) {
+  try {
+    yield put(setRecentUsersLoading(true));
+    const { limit = 10 } = action?.payload || {};
+    const response = yield call(dashboardService.getRecentUsers, limit);
+    
+    // Transform RecentUserDto to display format
+    const transformedData = response.data?.map(user => ({
+      id: user.id,
+      name: user.fullName || user.username,
+      role: user.roleLabel || user.roleName,
+      dept: user.departmentName || 'Chưa phân công',
+      status: user.statusLabel || (user.isActive ? 'Hoạt động' : 'Vô hiệu hóa'),
+      time: user.timeAgo || 'Không xác định',
+      email: user.email,
+      phone: user.phone,
+      employeeCode: user.employeeCode,
+      totalTickets: user.totalTicketsCreated || 0,
+      createdAt: user.createdAt,
+      lastLoginAt: user.lastLoginAt,
+      lastActivityAt: user.lastActivityAt,
+    })) || [];
+    
+    yield put(setRecentUsers(transformedData));
+  } catch (error) {
+    console.error('Dashboard Recent Users Error:', error);
+    yield put(setRecentUsersError(error.message || 'Lỗi tải danh sách người dùng mới'));
+  }
+}
+
 // Watcher Sagas
 export default function* dashboardSaga() {
   yield takeLatest('dashboard/fetchQuickStats', fetchQuickStatsSaga);
   yield takeLatest('dashboard/fetchUsersByDepartment', fetchUsersByDepartmentSaga);
   yield takeLatest('dashboard/fetchUsersByRole', fetchUsersByRoleSaga);
   yield takeLatest('dashboard/fetchOverviewStats', fetchOverviewStatsSaga);
+  yield takeLatest('dashboard/fetchUserGrowthStats', fetchUserGrowthStatsSaga);
+  yield takeLatest('dashboard/fetchRecentUsers', fetchRecentUsersSaga);
 }
