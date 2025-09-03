@@ -52,7 +52,7 @@ export const getProcessedTickets = async (filters = {}, page = 0, size = 10, app
     const params = new URLSearchParams({
       page: page.toString(),
       size: size.toString(),
-      sort: filters.sort || 'createdAt,desc',
+      sort: filters.sort || 'updatedAt,desc',
       approverId: approverId.toString(),
       ...Object.fromEntries(
         Object.entries(filters).filter(([_, value]) => value !== null && value !== undefined && value !== '')

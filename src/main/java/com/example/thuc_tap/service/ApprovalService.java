@@ -356,6 +356,7 @@ public class ApprovalService {
             TicketApproval pendingAudit = new TicketApproval();
             pendingAudit.setTicket(ticket);
             pendingAudit.setWorkflowStep(workflow);
+            pendingAudit.setUpdatedAt(LocalDateTime.now());
             // status = PENDING if exists
             ticketStatusRepository.findByName("PENDING").ifPresent(pendingAudit::setStatus);
             // No specific approver assigned for template path
@@ -389,7 +390,7 @@ public class ApprovalService {
         // Update the TicketApproval record
         ticketApproval.setAction(ApprovalAction.APPROVE);
         ticketApproval.setComments(note);
-        ticketApproval.setCreatedAt(LocalDateTime.now());
+//        ticketApproval.setUpdatedAt(LocalDateTime.now());
         ticketApprovalRepository.save(ticketApproval);
 
         // Update ticket status
@@ -437,7 +438,7 @@ public class ApprovalService {
         // Update the TicketApproval record
         ticketApproval.setAction(ApprovalAction.REJECT);
         ticketApproval.setComments(reason);
-        ticketApproval.setCreatedAt(LocalDateTime.now());
+//        ticketApproval.setCreatedAt(LocalDateTime.now());
         ticketApprovalRepository.save(ticketApproval);
 
         // Update ticket status to REJECTED

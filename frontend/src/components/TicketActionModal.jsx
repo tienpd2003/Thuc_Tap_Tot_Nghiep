@@ -304,9 +304,9 @@ export default function TicketActionModal({
                               approval.action === 'REJECT' ? '#c62828' : '#f57f17'
                           }}
                         />
-                        {approval.createdAt && (
+                        {approval.updatedAt && (
                           <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                            {formatDate(approval.createdAt)}
+                            {formatDate(approval.updatedAt)}
                           </Typography>
                         )}
                       </Box>

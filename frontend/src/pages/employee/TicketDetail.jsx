@@ -272,7 +272,7 @@ export default function TicketDetail() {
                           {approval.action}
                         </span>
                         <p className="text-xs text-gray-500 mt-1">
-                          {formatDate(approval.createdAt)}
+                          {formatDate(approval.updatedAt)}
                         </p>
                       </div>
                     </div>

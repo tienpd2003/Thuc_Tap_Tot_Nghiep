@@ -182,6 +182,7 @@ public class TicketApprovalService {
         dto.setAction(approval.getAction().name());
         dto.setComments(approval.getComments());
         dto.setCreatedAt(approval.getCreatedAt());
+        dto.setUpdatedAt(approval.getUpdatedAt());
 
         // Status info
         if (approval.getStatus() != null) {

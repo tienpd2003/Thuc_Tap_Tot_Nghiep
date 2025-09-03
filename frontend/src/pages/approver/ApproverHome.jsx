@@ -78,7 +78,7 @@ export default function ApproverHome() {
     priority: null,
     employeeCode: '',
     q: '',
-            sort: 'createdAt,desc'
+            sort: 'updatedAt,desc'
   });
 
   // Modal states
