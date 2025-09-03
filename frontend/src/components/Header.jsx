@@ -82,7 +82,7 @@ export default function Header({ role = "employee", onMenuClick, user, onLogout 
 				{/* Right side - Navigation and User Menu */}
 				<div className="flex items-center gap-4">
 					{/* Desktop Navigation */}
-					<nav className="hidden lg:flex items-center gap-1">
+					{/* <nav className="hidden lg:flex items-center gap-1">
 						{getNavItems().map((item) => (
 							<NavLink
 								key={item.to}
@@ -99,15 +99,15 @@ export default function Header({ role = "employee", onMenuClick, user, onLogout 
 								<span>{item.label}</span>
 							</NavLink>
 						))}
-					</nav>
+					</nav> */}
 
 					{/* Notifications */}
-					<button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
+					{/* <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
 						<MdOutlineNotifications className="h-5 w-5 text-gray-600" />
 						<span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
 							3
 						</span>
-					</button>
+					</button> */}
 
 					{/* User Menu */}
 					<div className="flex items-center gap-3">

@@ -1,5 +1,12 @@
 import apiClient from './apiClient';
 
+export const getActiveFormTemplates = async (page = 0, size = 10) => {
+  const response = await apiClient.get("/form-templates/active", { 
+    params: { page, size } 
+  });
+  return response;
+};
+
 export const getAllFormTemplates = async (filters = {}) => {
   const response = await apiClient.get("/form-templates", { params: filters });
   return response.data;
@@ -75,5 +82,6 @@ export default {
   submitFormResponse,
   activateFormTemplate, 
   deactivateFormTemplate, 
-  deleteFormTemplate
+  deleteFormTemplate,
+  getActiveFormTemplates
 };

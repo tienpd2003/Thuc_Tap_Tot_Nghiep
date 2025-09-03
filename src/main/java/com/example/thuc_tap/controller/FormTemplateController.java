@@ -16,6 +16,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/form-templates")
 @RequiredArgsConstructor
@@ -27,6 +29,11 @@ public class FormTemplateController {
     @GetMapping
     public ResponseEntity<Page<FormTemplateFilterResponse>> getAllFormTemplates(@Valid @ParameterObject @ModelAttribute FormTemplateFilterRequest filterRequest) {
         return ResponseEntity.ok(formTemplateService.getAllFormTemplates(filterRequest));
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<Page<FormTemplateFilterResponse>> getActiveFormTemplates(@Valid @ParameterObject @ModelAttribute FormTemplateFilterRequest filterRequest) {
+        return ResponseEntity.ok(formTemplateService.getActiveFormTemplates(filterRequest));
     }
 
     @GetMapping(value = "/{id}")

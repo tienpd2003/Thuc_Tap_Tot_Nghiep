@@ -11,6 +11,7 @@ public class TicketApprovalsResponse {
     private String title;
     private String description;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private LocalDateTime dueDate;
     private Long requesterId;
     private String requesterName;

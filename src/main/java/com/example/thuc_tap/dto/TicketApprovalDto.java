@@ -28,4 +28,5 @@ public class TicketApprovalDto {
     private Long forwardedToDepartmentId;
     private String forwardedToDepartmentName;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
