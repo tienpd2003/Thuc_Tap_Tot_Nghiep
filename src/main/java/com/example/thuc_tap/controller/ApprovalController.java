@@ -79,6 +79,7 @@ public class ApprovalController {
 
     @PostMapping("/{ticketId}/reject")
     public ResponseEntity<Void> reject(@PathVariable Long ticketId, @RequestBody RejectRequest req) {
+        // Use the new method that works with TicketApproval
         approvalService.rejectTicketApproval(req.getTaskId(), req.getReason(), req.getActingUserId());
         return ResponseEntity.ok().build();
     }

@@ -445,9 +445,23 @@ public class ApprovalService {
         String fromStatus = ticket.getCurrentStatus().getName();
         ticketStatusRepository.findByName("REJECTED").ifPresent(ticket::setCurrentStatus);
         ticketRepository.save(ticket);
-        
+
         // Create history
         ticketHistoryService.createRejectedHistory(ticket, ticketApproval.getApprover(), reason, fromStatus, "REJECTED");
+
+        // Đổi trạng thái các TicketApproval phía sau thành REJECT
+        Integer currentStepOrder = ticketApproval.getWorkflowStep().getStepOrder();
+        List<TicketApproval> laterApprovals = ticketApprovalRepository.findByTicketIdAndStepOrderGreaterThan(
+            ticket.getId(), currentStepOrder
+        );
+        for (TicketApproval ta : laterApprovals) {
+            if (ApprovalAction.PENDING.equals(ta.getAction())) {
+                ta.setAction(ApprovalAction.REJECT);
+                ta.setComments("Auto-rejected due to previous rejection");
+                ta.setCreatedAt(LocalDateTime.now());
+                ticketApprovalRepository.save(ta);
+            }
+        }
     }
 
     /**

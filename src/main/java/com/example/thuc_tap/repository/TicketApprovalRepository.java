@@ -13,6 +13,9 @@ import java.util.Optional;
 
 @Repository
 public interface TicketApprovalRepository extends JpaRepository<TicketApproval, Long> {
+
+    @Query("SELECT ta FROM TicketApproval ta WHERE ta.ticket.id = :ticketId AND ta.workflowStep.stepOrder > :stepOrder")
+    List<TicketApproval> findByTicketIdAndStepOrderGreaterThan(@Param("ticketId") Long ticketId, @Param("stepOrder") Integer stepOrder);
     
     /**
      * Lấy tất cả approvals của một ticket theo thứ tự step
