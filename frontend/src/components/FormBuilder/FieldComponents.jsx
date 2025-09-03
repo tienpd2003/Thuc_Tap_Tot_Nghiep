@@ -210,7 +210,7 @@ const FieldComponents = {
                 disabled={disabled || field.readOnly || option.disabled}
                 sx={{
                   '&.Mui-checked': {
-                    color: '#5e83ae',
+                    color: '#1976d2',
                   },
                   '&:hover': {
                     backgroundColor: 'rgba(94, 131, 174, 0.04)',

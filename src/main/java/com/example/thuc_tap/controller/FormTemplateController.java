@@ -158,4 +158,22 @@ public class FormTemplateController {
         FormTemplateResponse formTemplate = formTemplateService.updateFormTemplate(id, request);
         return ResponseEntity.ok(formTemplate);
     }
+
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<String> activateFormTemplate(@PathVariable Long id) {
+        formTemplateService.activate(id);
+        return ResponseEntity.ok("FormTemplate " + id + " has been activated.");
+    }
+
+    @PatchMapping("/{id}/deactivate")
+    public ResponseEntity<String> deactivateFormTemplate(@PathVariable Long id) {
+        formTemplateService.deactivate(id);
+        return ResponseEntity.ok("FormTemplate " + id + " has been deactivated.");
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteFormTemplate(@PathVariable Long id) {
+        formTemplateService.deleteFormTemplate(id);
+        return ResponseEntity.ok().build();
+    }
 }

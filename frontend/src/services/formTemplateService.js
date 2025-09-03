@@ -45,11 +45,35 @@ export const submitFormResponse = async (formTemplateId, responseData) => {
   return response.data;
 };
 
+export const activateFormTemplate = async (formTemplateId) => {
+  const response = await apiClient.patch(
+    `/form-templates/${formTemplateId}/activate`
+  );
+  return response.data;
+}
+
+export const deactivateFormTemplate = async (formTemplateId) => {
+  const response = await apiClient.patch(
+    `/form-templates/${formTemplateId}/deactivate`
+  );
+  return response.data;
+}
+
+export const deleteFormTemplate = async (formTemplateId) => {
+  const response = await apiClient.delete(
+    `/form-templates/${formTemplateId}`
+  );
+  return response.data;
+}
+
 // Default export for compatibility
 export default {
   getAllFormTemplates,
   getFormTemplates,
   getFormTemplate,
   saveFormSchema,
-  submitFormResponse
+  submitFormResponse,
+  activateFormTemplate, 
+  deactivateFormTemplate, 
+  deleteFormTemplate
 };

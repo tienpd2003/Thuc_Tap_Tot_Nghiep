@@ -61,7 +61,7 @@ const FormCanvas = ({ formSchema, setFormSchema, isPreviewMode, onEditField, for
         <div className="flex justify-between items-center">
           <h3 className="text-md font-semibold">Form Fields<span className="text-red-500 ml-1">*</span></h3>
           <button
-            className="cursor-pointer px-3 py-2 rounded-lg bg-[#5e83ae] hover:bg-[#4a6b8a] text-white justify-center flex gap-1"
+            className="cursor-pointer px-3 py-2 rounded-lg bg-[#1976d2] hover:bg-[#4a6b8a] text-white justify-center flex gap-1"
             onClick={() => addFieldFromToolbox('TEXT')}
           >
             <MdAdd size={20} />

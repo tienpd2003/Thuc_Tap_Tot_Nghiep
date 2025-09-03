@@ -10,7 +10,7 @@ import { store } from './store';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#5e83ae', // Using the same color as CSS variable --primary-color
+      main: '#1976d2', // Using the same color as CSS variable --primary-color
       dark: '#4a6b8a', // Using the same color as CSS variable --primary-dark
       light: '#7a9bc4', // Using the same color as CSS variable --primary-light
     },
