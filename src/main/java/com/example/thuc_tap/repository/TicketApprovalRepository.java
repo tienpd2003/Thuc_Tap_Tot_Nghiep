@@ -18,6 +18,26 @@ public interface TicketApprovalRepository extends JpaRepository<TicketApproval, 
     List<TicketApproval> findByTicketIdAndStepOrderGreaterThan(@Param("ticketId") Long ticketId, @Param("stepOrder") Integer stepOrder);
     
     /**
+     * Kiểm tra xem tầng trước đó đã được duyệt chưa
+     */
+    @Query("SELECT ta FROM TicketApproval ta " +
+           "JOIN ta.workflowStep ws " +
+           "WHERE ta.ticket.id = :ticketId " +
+           "AND ws.stepOrder < :currentStepOrder " +
+           "AND ta.action = 'PENDING'")
+    List<TicketApproval> findPendingPreviousSteps(@Param("ticketId") Long ticketId, @Param("currentStepOrder") Integer currentStepOrder);
+    
+    /**
+     * Kiểm tra xem tầng trước đó đã được duyệt hoàn toàn chưa
+     */
+    @Query("SELECT COUNT(ta) FROM TicketApproval ta " +
+           "JOIN ta.workflowStep ws " +
+           "WHERE ta.ticket.id = :ticketId " +
+           "AND ws.stepOrder < :currentStepOrder " +
+           "AND ta.action = 'PENDING'")
+    long countPendingPreviousSteps(@Param("ticketId") Long ticketId, @Param("currentStepOrder") Integer currentStepOrder);
+    
+    /**
      * Lấy tất cả approvals của một ticket theo thứ tự step
      */
     @Query("SELECT ta FROM TicketApproval ta " +

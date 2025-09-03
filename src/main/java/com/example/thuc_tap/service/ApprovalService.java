@@ -387,6 +387,14 @@ public class ApprovalService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ticket already processed");
         }
 
+        // Kiểm tra xem tầng trước đó đã được duyệt chưa
+        Integer currentStepOrder = ticketApproval.getWorkflowStep().getStepOrder();
+        long pendingPreviousSteps = ticketApprovalRepository.countPendingPreviousSteps(ticketApproval.getTicket().getId(), currentStepOrder);
+        if (pendingPreviousSteps > 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Cannot approve this step. Previous workflow steps are still pending. Please wait for previous approvals.");
+        }
+
         // Update the TicketApproval record
         ticketApproval.setAction(ApprovalAction.APPROVE);
         ticketApproval.setComments(note);
@@ -435,6 +443,14 @@ public class ApprovalService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ticket already processed");
         }
 
+        // Kiểm tra xem tầng trước đó đã được duyệt chưa
+        Integer currentStepOrder = ticketApproval.getWorkflowStep().getStepOrder();
+        long pendingPreviousSteps = ticketApprovalRepository.countPendingPreviousSteps(ticketApproval.getTicket().getId(), currentStepOrder);
+        if (pendingPreviousSteps > 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Cannot reject this step. Previous workflow steps are still pending. Please wait for previous approvals.");
+        }
+
         // Update the TicketApproval record
         ticketApproval.setAction(ApprovalAction.REJECT);
         ticketApproval.setComments(reason);
@@ -451,9 +467,9 @@ public class ApprovalService {
         ticketHistoryService.createRejectedHistory(ticket, ticketApproval.getApprover(), reason, fromStatus, "REJECTED");
 
         // Đổi trạng thái các TicketApproval phía sau thành REJECT
-        Integer currentStepOrder = ticketApproval.getWorkflowStep().getStepOrder();
+        Integer rejectionStepOrder = ticketApproval.getWorkflowStep().getStepOrder();
         List<TicketApproval> laterApprovals = ticketApprovalRepository.findByTicketIdAndStepOrderGreaterThan(
-            ticket.getId(), currentStepOrder
+            ticket.getId(), rejectionStepOrder
         );
         for (TicketApproval ta : laterApprovals) {
             if (ApprovalAction.PENDING.equals(ta.getAction())) {
