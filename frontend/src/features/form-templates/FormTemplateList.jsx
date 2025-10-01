@@ -16,7 +16,12 @@ import {
   FiPlayCircle,
 } from "react-icons/fi";
 import { Popover } from "@mui/material";
-import { getAllFormTemplates, activateFormTemplate, deactivateFormTemplate, deleteFormTemplate } from "../../services/formTemplateService";
+import {
+  getAllFormTemplates,
+  activateFormTemplate,
+  deactivateFormTemplate,
+  deleteFormTemplate,
+} from "../../services/formTemplateService";
 import { Link, useNavigate } from "react-router-dom";
 import { departmentService, userService } from "../../services";
 import Popup from "../../components/ui/Popup";
@@ -40,7 +45,7 @@ const FormTemplateList = () => {
     page: 0,
     pageSize: 10,
     sortBy: "createdAt",
-    sortDirection: "desc"
+    sortDirection: "desc",
   });
 
   // Popover states
@@ -51,15 +56,14 @@ const FormTemplateList = () => {
 
   // Department colors for approval workflow
   const departmentColors = [
-    'bg-blue-100 text-blue-800',
-    'bg-green-100 text-green-800',
-    'bg-purple-100 text-purple-800',
-    'bg-orange-100 text-orange-800',
-    'bg-pink-100 text-pink-800',
-    'bg-yellow-100 text-yellow-800',
-    'bg-indigo-100 text-indigo-800',
-    'bg-teal-100 text-teal-800',
-    
+    "bg-blue-100 text-blue-800",
+    "bg-green-100 text-green-800",
+    "bg-purple-100 text-purple-800",
+    "bg-orange-100 text-orange-800",
+    "bg-pink-100 text-pink-800",
+    "bg-yellow-100 text-yellow-800",
+    "bg-indigo-100 text-indigo-800",
+    "bg-teal-100 text-teal-800",
   ];
 
   // Format date function
@@ -137,7 +141,19 @@ const FormTemplateList = () => {
           filterParams[key] !== null &&
           filterParams[key] !== undefined
         ) {
-          queryParams[key] = filterParams[key];
+          if (key === "createdAtFrom" || key === "updatedAtFrom") {
+            queryParams[key] = filterParams[key]
+              ? new Date(filterParams[key]).toISOString().slice(0,19)
+              : "";
+          } else if (key === "createdAtTo" || key === "updatedAtTo") {
+            queryParams[key] = filterParams[key]
+              ? new Date(
+                  new Date(filterParams[key]).setHours(23, 59, 59, 999)
+                ).toISOString().slice(0,19)
+              : "";
+          } else {
+            queryParams[key] = filterParams[key];
+          }
         }
       });
 
@@ -850,9 +866,7 @@ const FormTemplateList = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 w-1/12 whitespace-nowrap text-sm text-gray-700 justify-items-center">
-                        <div className="font-medium">
-                          {item.dueInDays}
-                        </div>
+                        <div className="font-medium">{item.dueInDays}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         <div className="font-medium">
@@ -883,38 +897,42 @@ const FormTemplateList = () => {
                             <FiEdit className="h-5 w-5" />
                           </button>
                           {item.isActive ? (
-  <button
-    onClick={() => handleDeactivate(item.id)}
-    disabled={loadingStates[item.id]}
-    title="Deactivate"
-    className="p-2 rounded-lg transition-colors 
+                            <button
+                              onClick={() => handleDeactivate(item.id)}
+                              disabled={loadingStates[item.id]}
+                              title="Deactivate"
+                              className="p-2 rounded-lg transition-colors 
                text-yellow-600 hover:text-yellow-900 
                hover:bg-yellow-50 disabled:opacity-50"
-  >
-    {loadingStates[item.id] ? (
-      <div className="animate-spin rounded-full h-4 w-4 
-                      border-t-2 border-b-2 border-yellow-600"></div>
-    ) : (
-      <FiPauseCircle className="h-5 w-5" />
-    )}
-  </button>
-) : (
-  <button
-    onClick={() => handleActivate(item.id)}
-    disabled={loadingStates[item.id]}
-    title="Activate"
-    className="p-2 rounded-lg transition-colors 
+                            >
+                              {loadingStates[item.id] ? (
+                                <div
+                                  className="animate-spin rounded-full h-4 w-4 
+                      border-t-2 border-b-2 border-yellow-600"
+                                ></div>
+                              ) : (
+                                <FiPauseCircle className="h-5 w-5" />
+                              )}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleActivate(item.id)}
+                              disabled={loadingStates[item.id]}
+                              title="Activate"
+                              className="p-2 rounded-lg transition-colors 
                text-gray-600 hover:text-gray-900 
                hover:bg-gray-50 disabled:opacity-50"
-  >
-    {loadingStates[item.id] ? (
-      <div className="animate-spin rounded-full h-4 w-4 
-                      border-t-2 border-b-2 border-gray-600"></div>
-    ) : (
-      <FiPlayCircle className="h-5 w-5" />
-    )}
-  </button>
-)}
+                            >
+                              {loadingStates[item.id] ? (
+                                <div
+                                  className="animate-spin rounded-full h-4 w-4 
+                      border-t-2 border-b-2 border-gray-600"
+                                ></div>
+                              ) : (
+                                <FiPlayCircle className="h-5 w-5" />
+                              )}
+                            </button>
+                          )}
                           <button
                             onClick={() => handleDelete(item.id)}
                             className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors"

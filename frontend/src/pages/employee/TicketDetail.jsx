@@ -190,7 +190,7 @@ export default function TicketDetail() {
                 <div className="ml-3 min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-900">Ticket Created</p>
                   <p className="text-sm text-gray-500">
-                    Created by {ticket.requesterName} on {formatDate(ticket.createdAt)}
+                    Được tạo bởi {ticket.requesterName} {formatDate(ticket.createdAt)}
                   </p>
                 </div>
               </div>
@@ -261,6 +261,9 @@ export default function TicketDetail() {
                         <p className="text-sm font-medium text-gray-900">
                           {approval.approverName || 'Unknown Approver'}
                         </p>
+                        <p className="text-sm text-gray-500">
+                          Department: {approval.departmentName || 'N/A'}
+                        </p>                       
                         <p className="text-sm text-gray-500">{approval.comments}</p>
                       </div>
                       <div className="text-right">

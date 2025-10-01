@@ -1,7 +1,7 @@
 package com.example.thuc_tap.mapper;
 
 import com.example.thuc_tap.dto.ApprovalWorkflowDto;
-import com.example.thuc_tap.dto.FormFieldDto;
+//import com.example.thuc_tap.dto.FormFieldDto;
 //import com.example.thuc_tap.dto.FormTemplateDto;
 import com.example.thuc_tap.dto.response.FormTemplateResponse;
 import com.example.thuc_tap.entity.ApprovalWorkflow;
@@ -10,7 +10,9 @@ import com.example.thuc_tap.entity.FormTemplate;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.stereotype.Component;
 
+@Component
 @Mapper(componentModel = "spring")
 public interface FormTemplateMapper {
 

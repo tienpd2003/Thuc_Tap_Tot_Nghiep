@@ -52,33 +52,51 @@ export default function PreviewFormTemplate() {
   }, [id]);
 
   const renderFormFields = () => {
-    if (!template?.formSchema?.fields) return null;
+  if (!template?.formSchema?.fields) return null;
 
-    return template.formSchema.fields.map(field => {
-      const FieldComponent = FieldComponents[field.type] || FieldComponents.TEXT;
-      
-      return (
-        <div key={field.key} className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            {field.label}
-            {field.validation?.required && <span className="text-red-500 ml-1">*</span>}
-          </label>
-          
-          <FieldComponent
-            field={field}
-            value={field.defaultValue || ''}
-            onChange={() => {}} // No-op for preview
-            disabled={true} // Always disabled in preview
-            className="bg-gray-50" // Gray background to indicate disabled
-          />
-          
-          {field.helpText && (
-            <p className="mt-1 text-xs text-gray-500">{field.helpText}</p>
-          )}
-        </div>
-      );
-    });
-  };
+  return (
+    <div className="grid grid-cols-12 gap-4">
+      {template.formSchema.fields.map(field => {
+        const FieldComponent = FieldComponents[field.type] || FieldComponents.TEXT;
+        const colSpan = field.ui?.colSpan || 12;
+        
+        // Ánh xạ giá trị colSpan sang class Tailwind tương ứng
+        const colSpanClass = {
+          1: 'col-span-1',
+          2: 'col-span-2',
+          3: 'col-span-3',
+          4: 'col-span-4',
+          5: 'col-span-5',
+          6: 'col-span-6',
+          7: 'col-span-7',
+          8: 'col-span-8',
+          9: 'col-span-9',
+          10: 'col-span-10',
+          11: 'col-span-11',
+          12: 'col-span-12'
+        }[colSpan] || 'col-span-12';
+
+        return (
+          <div key={field.key} className={`${colSpanClass} mb-4`}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {field.label}
+              {field.validation?.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            
+            <FieldComponent
+              field={field}
+              disabled={false}
+            />
+            
+            {field.helpText && (
+              <p className="mt-1 text-xs text-gray-500">{field.helpText}</p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
   const renderWorkflowSteps = () => {
     if (!template?.approvalWorkflows || template.approvalWorkflows.length === 0) {
@@ -100,7 +118,7 @@ export default function PreviewFormTemplate() {
             <div className="ml-4 flex-1">
               <h4 className="text-sm font-medium text-gray-900">{workflow.stepName}</h4>
               <p className="text-sm text-gray-500">
-                Department ID: {workflow.departmentId || 'Not specified'}
+                Phòng ban xử lý: {workflow.departmentName || 'Not specified'}
               </p>
             </div>
             {index < template.approvalWorkflows.length - 1 && (
@@ -269,7 +287,7 @@ export default function PreviewFormTemplate() {
                 }`}
               >
                 <Eye className="h-4 w-4 inline mr-2" />
-                Form Preview
+                Form Fields
               </button>
               <button
                 onClick={() => setActiveTab('workflow')}
@@ -301,7 +319,7 @@ export default function PreviewFormTemplate() {
             <div className="bg-white rounded-lg shadow-sm border p-6">
               {activeTab === 'preview' && (
                 <div>
-                  <h2 className="text-lg font-medium text-gray-900 mb-6">Form Preview</h2>
+                  <h2 className="text-lg font-medium text-gray-900 mb-6">Form Fields</h2>
                   <div className="space-y-6">
                     {renderFormFields()}
                   </div>

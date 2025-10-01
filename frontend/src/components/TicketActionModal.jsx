@@ -76,7 +76,12 @@ export default function TicketActionModal({
       onSuccess && onSuccess();
       handleClose();
     } catch (error) {
-      setError(action === 'approve' ? 'Lỗi khi duyệt ticket' : 'Lỗi khi từ chối ticket');
+      const errorMessage = error.response?.data?.message 
+      || error.response?.data?.error 
+      || error.message 
+      || (action === 'approve' ? 'Lỗi khi duyệt ticket' : 'Lỗi khi từ chối ticket');
+    
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -159,8 +164,16 @@ export default function TicketActionModal({
             <Typography variant="h6" gutterBottom>
               Thông tin Ticket
             </Typography>
+            <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Tiêu đề
+            </Typography>
+            <Typography variant="body1">
+              {ticketDetails.title || 'Không có'}
+            </Typography>
+            </Box>
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid item size={4}>
                 <Typography variant="body2" color="text.secondary">
                   Mã Ticket
                 </Typography>
@@ -168,23 +181,16 @@ export default function TicketActionModal({
                   {ticketDetails.ticketCode || 'Không có'}
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
-                <Typography variant="body2" color="text.secondary">
-                  Tiêu đề
-                </Typography>
-                <Typography variant="body1">
-                  {ticketDetails.title || 'Không có'}
-                </Typography>
-              </Grid>
-              <Grid item xs={6}>
+              
+              <Grid item size={4}>
                 <Typography variant="body2" color="text.secondary">
                   Người tạo
                 </Typography>
                 <Typography variant="body1">
-                  {ticketDetails.requesterName || 'Không có'} ({ticketDetails.requesterId || 'N/A'})
+                  {ticketDetails.requesterName || 'Không có'}
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid item size={4}>
                 <Typography variant="body2" color="text.secondary">
                   Phòng ban
                 </Typography>
@@ -192,15 +198,7 @@ export default function TicketActionModal({
                   {ticketDetails.departmentName || 'Không có'}
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
-                <Typography variant="body2" color="text.secondary">
-                  Loại yêu cầu
-                </Typography>
-                <Typography variant="body1">
-                  {ticketDetails.formTemplateName || 'Không có'}
-                </Typography>
-              </Grid>
-              <Grid item xs={6}>
+              <Grid item size={4}>
                 <Typography variant="body2" color="text.secondary">
                   Mức ưu tiên
                 </Typography>
@@ -215,7 +213,7 @@ export default function TicketActionModal({
                   }}
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid item size={4}>
                 <Typography variant="body2" color="text.secondary">
                   Ngày tạo
                 </Typography>
@@ -223,7 +221,7 @@ export default function TicketActionModal({
                   {ticketDetails.createdAt ? formatDate(ticketDetails.createdAt) : 'Không có'}
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid item size={4}>
                 <Typography variant="body2" color="text.secondary">
                   Hạn xử lý
                 </Typography>
@@ -232,19 +230,18 @@ export default function TicketActionModal({
                 </Typography>
               </Grid>
             </Grid>
+            
             {ticketDetails.description && (
               <Box sx={{ mt: 2 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Mô tả
                 </Typography>
-                <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 1, border: '1px solid #e0e0e0' }}>
                   <Typography variant="body1">
                     {ticketDetails.description}
                   </Typography>
-                </Box>
               </Box>
             )}
-          </Box>
+          </Box>  
 
                      {/* Ticket Form Data */}
            {ticketDetails.formData && Object.keys(ticketDetails.formData).length > 0 && (
@@ -256,10 +253,10 @@ export default function TicketActionModal({
                  {Object.entries(ticketDetails.formData).map(([key, value], index) => (
                    <Box key={index} sx={{ bgcolor: 'white', p: 2, borderRadius: 1, border: '1px solid #e0e0e0' }}>
                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                       {key}
+                       {value?.label || key}
                      </Typography>
                      <Typography variant="body1">
-                       {String(value)}
+                       {value?.value ? value.value.toString() : ''}
                      </Typography>
                    </Box>
                  ))}
@@ -283,7 +280,7 @@ export default function TicketActionModal({
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           {approval.approverName ? 
-                            `${approval.approverName} (${approval.approverId || 'N/A'})` : 
+                            `${approval.approverName} (${approval.departmentName || 'N/A'})` : 
                             'Chưa được xử lý'
                           }
                         </Typography>

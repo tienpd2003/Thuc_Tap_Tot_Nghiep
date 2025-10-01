@@ -43,8 +43,13 @@ const WorkflowConfigPanel = ({ step, onSave, onCancel, departments = [] }) => {
         <div className="flex">
           <button
             onClick={() => {
-              if (config.stepName && config.departmentId) {
-                onSave(config);
+              if (config.departmentId) {
+                const stepName =
+                  config.stepName && config.stepName.trim() !== ""
+                    ? config.stepName
+                    : `Bộ phận ${selectedDept.name} duyệt`;
+
+                onSave({ ...config, stepName });
               }
               onCancel();
             }}

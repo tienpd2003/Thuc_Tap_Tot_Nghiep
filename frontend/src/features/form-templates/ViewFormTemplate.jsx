@@ -3,8 +3,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import FieldComponents from "../../components/FormBuilder/FieldComponents";
 import { getFormTemplate } from "../../services/formTemplateService";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function ViewFormTemplate() {
+  const { user } = useAuth();
+
   const { id } = useParams(); // Lấy ID từ URL params
   const [template, setTemplate] = useState(null);
   const [formData, setFormData] = useState({});
@@ -64,7 +67,7 @@ export default function ViewFormTemplate() {
       
       await axios.post(`http://localhost:8080/api/form-templates/${id}/responses`, {
         formData,
-        submittedBy: 1 // Nên lấy từ authentication context/state
+        submittedBy: user?.id // Nên lấy từ authentication context/state
       });
       
       setSubmitted(true);

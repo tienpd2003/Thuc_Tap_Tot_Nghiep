@@ -330,6 +330,7 @@ public class TicketService {
                             .ifPresent(schemaField -> {
                                 formDataDto.setFieldLabel(schemaField.getLabel() != null ? schemaField.getLabel().toString() : null);
                                 formDataDto.setFieldType(schemaField.getType());
+                                formDataDto.setColSpan(schemaField.getUi().getColSpan() != null ? schemaField.getUi().getColSpan() : 0);
                             });
                 }
 

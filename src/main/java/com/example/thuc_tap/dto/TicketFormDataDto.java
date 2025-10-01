@@ -17,4 +17,5 @@ public class TicketFormDataDto {
     private String fieldValue;
     private String filePath;
     private String fieldType;
+    private Integer colSpan;
 }

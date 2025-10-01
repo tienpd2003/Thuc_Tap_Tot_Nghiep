@@ -263,33 +263,58 @@ export default function CreateTicket() {
 
   // Render form fields based on template schema
   const renderFormFields = () => {
-    if (!selectedTemplate?.formSchema?.fields) return null;
+  if (!selectedTemplate?.formSchema?.fields) return null;
 
-    return selectedTemplate.formSchema.fields.map(field => {
-      const FieldComponent = FieldComponents[field.type] || FieldComponents.TEXT;
-      
-      return (
-        <div key={field.key} className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            {field.label}
-            {field.validation?.required && <span className="text-red-500 ml-1">*</span>}
-          </label>
-          
-          <FieldComponent
-            field={field}
-            value={formData[field.key]}
-            onChange={(value) => handleFieldChange(field.key, value)}
-            disabled={false}
-          />
-          
-          {field.helpText && (
-            <p className="mt-1 text-sm text-gray-500">{field.helpText}</p>
-          )}
-        </div>
-      );
-    });
-  };
+  return (
+    <div className="grid grid-cols-12 gap-4 mt-4">
+      {selectedTemplate.formSchema.fields.map(field => {
+        const FieldComponent = FieldComponents[field.type] || FieldComponents.TEXT;
+        const colSpan = field.ui?.colSpan || 12;
+        
+        // Ánh xạ giá trị colSpan sang class Tailwind tương ứng
+        const colSpanClass = {
+          1: 'col-span-1',
+          2: 'col-span-2',
+          3: 'col-span-3',
+          4: 'col-span-4',
+          5: 'col-span-5',
+          6: 'col-span-6',
+          7: 'col-span-7',
+          8: 'col-span-8',
+          9: 'col-span-9',
+          10: 'col-span-10',
+          11: 'col-span-11',
+          12: 'col-span-12'
+        }[colSpan] || 'col-span-12';
 
+        return (
+          <div
+            key={field.key}
+            className={`${colSpanClass} mb-4`}
+          >
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {field.label}
+              {field.validation?.required && (
+                <span className="text-red-500 ml-1">*</span>
+              )}
+            </label>
+            
+            <div className="w-full">
+              <FieldComponent
+                field={field}
+                value={formData[field.key]}
+                onChange={(value) => handleFieldChange(field.key, value)}
+                disabled={false}
+                placeholder={`Nhập ${field.label.toLowerCase()}`}
+              />
+            </div>
+            
+          </div>
+        );
+      })}
+    </div>
+  );
+};
   // Render workflow approver selection
   const renderWorkflowSelection = () => {
     if (!selectedTemplate?.approvalWorkflows?.length) return null;

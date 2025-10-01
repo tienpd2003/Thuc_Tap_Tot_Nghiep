@@ -1,5 +1,6 @@
 package com.example.thuc_tap.service;
 
+import com.example.thuc_tap.common.FormSchema;
 import com.example.thuc_tap.dto.TicketApprovalDto;
 import com.example.thuc_tap.dto.response.TicketApprovalsResponse;
 import com.example.thuc_tap.entity.*;
@@ -10,7 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -123,9 +126,41 @@ public class TicketApprovalService {
         }
 
         // Set form data
-        if (ticket.getFormData() != null) {
-            try { r.setFormData(ticket.getFormData()); }
-            catch (Exception ignored) {}
+        if (ticket.getFormData() != null && !ticket.getFormData().isEmpty()) {
+            // Tạo một Map mới để lưu trữ dữ liệu form
+            Map<String, Object> formDataMap = new LinkedHashMap<>();
+
+            for (Map.Entry<String, Object> entry : ticket.getFormData().entrySet()) {
+                String fieldKey = entry.getKey();
+                Object fieldValue = entry.getValue();
+
+                // Nếu cần giữ nguyên cấu trúc dữ liệu chi tiết, có thể tạo một Map cho mỗi field
+                Map<String, Object> fieldData = new LinkedHashMap<>();
+                fieldData.put("value", fieldValue);
+
+                // Lấy thông tin từ form schema nếu có
+                if (ticket.getFormTemplate() != null &&
+                        ticket.getFormTemplate().getFormSchema() != null &&
+                        ticket.getFormTemplate().getFormSchema().getFields() != null) {
+
+                    for (FormSchema.FieldSchema fieldSchema : ticket.getFormTemplate().getFormSchema().getFields()) {
+                        if (fieldKey.equals(fieldSchema.getKey())) {
+                            fieldData.put("label", fieldSchema.getLabel());
+                            fieldData.put("type", fieldSchema.getType());
+
+                            if (fieldSchema.getUi() != null) {
+                                fieldData.put("colSpan", fieldSchema.getUi().getColSpan());
+                            }
+
+                            break; // Thoát vòng lặp khi tìm thấy field
+                        }
+                    }
+                }
+
+                formDataMap.put(fieldKey, fieldData);
+            }
+
+            r.setFormData(formDataMap);
         }
 
         r.setApprovals(approvals);

@@ -32,6 +32,9 @@ public class TicketFormData {
     
     @Column(name = "file_path", length = 500)
     private String filePath; // Cho file upload
+
+    @Column(name = "col_span")
+    private Integer colSpan = 12;
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
